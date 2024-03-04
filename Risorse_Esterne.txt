@@ -1,0 +1,3 @@
+https://github.com/ObservedObserver/streamlit-shadcn-ui external_widget
+https://docs.streamlit.io/library/api-reference/layout streamlit layout
+https://github.com/Kanaries/pygwalker data visualizer

@@ -1,0 +1,10 @@
+
+VERSIONE 0.1
+TODO: reperire e rielaborare i dati
+TODO: costruire salvare e recuperare i Training
+TODO: costruire salvare e recuperare funzioni e schemi >>>>> 
+TODO: verificare coerenza fra dati e schema 
+TODO: costruire ambninte e modello d'addestramento
+TODO: eseguire i logs e recuperarli
+TODO: aggiornare i record nel db
+
