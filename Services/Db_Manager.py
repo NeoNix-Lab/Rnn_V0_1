@@ -55,19 +55,20 @@ def retrive_all(obj_name, tab_name):
 def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str, bool, Any]]:
 
     """
-    Verifica l'esistenza di uno o più oggetti nella tabella specificata e restituisce i dettagli.
-
+    Verifica l'esistenza di uno o piu oggetti nella tabella specificata e restituisce i dettagli.
+    
     Args:
-        prop_name (str): Nome della propieta chiave nella tabella per il confronto.
+        prop_name (str): Nome della proprieta chiave nella tabella per il confronto.
         val_name (str): Nome della colonna chiave nella tabella per il confronto.
         tab_name (str): Nome della tabella in cui cercare l'oggetto.
-        obj_values (Union[str, List[str]]): Valore(i) dell'oggetto da cercare. Può essere una stringa singola o una lista di stringhe.
-
+        obj_values (Union[str, List[str]]): Valore(i) dell'oggetto da cercare. Puo essere una stringa singola o una lista di stringhe.
+    
     Returns:
         List[Tuple[str, bool, Any]]: Una lista di tuple dove ogni tupla contiene il valore di obj_value analizzato,
                                      un booleano che indica se l'oggetto esiste o non esiste nel database,
                                      e il parametri dell'oggetto (di qualsiasi tipo) se esiste, altrimenti None.
     """
+
 
     conn = None
     try:
@@ -100,16 +101,17 @@ def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str
 def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> List[any]:
 
     """
-    Verifica l'esistenza di uno o più oggetti nella tabella specificata e restituisce tutti i dettagli.
-
+    Verifica l'esistenza di uno o piu oggetti nella tabella specificata e restituisce tutti i dettagli.
+    
     Args:
         val_name (str): Nome della colonna chiave nella tabella per il confronto.
         tab_name (str): Nome della tabella in cui cercare l'oggetto.
-        obj_values (List[any]]): Valore(i) dell'oggetto da cercare. Può essere una stringa singola o una lista di stringhe.
-
+        obj_values (List[any]]): Valore(i) dell'oggetto da cercare. Puo essere una stringa singola o una lista di stringhe.
+    
     Returns:
         List[any]: Una lista di Any dove Rappresentanti la risposta alla ricerca di uno specifico oggetto
     """
+
 
     conn = None
     try:

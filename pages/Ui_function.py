@@ -1,25 +1,24 @@
 import streamlit as st
 import streamlit_shadcn_ui as ui
-#import pygwalker as pyg
 from Services import IchimokuDataRetriver as ichi
 
-
 st.set_page_config(
-    page_title="Ex-stream-ly Cool App",
+    page_title="Rnn_Function_Builder",
     page_icon="random",
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items={
-        'Get Help': 'https://www.extremelycoolapp.com/help',
-        'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"
+        'Get Help': 'https://docs.streamlit.io/library/api-reference/layout',
+        'Report a bug': "https://https://shadcn.streamlit.app/DatePicker",
+        'About': "# Here you will able to build Customs RL Functions"
     }
 
 )
 
-st.title('Set your Function')
+st.title('Reward_Functions')
+st.subheader('Set, Save or Load your RL Function')
 
-size = [0.3,0.3, 0.1]
+size = [0.1,0.1, 1]
 col1, col2, tre= st.columns(size,gap='large')
 
 col1.header('he')

@@ -1,21 +1,20 @@
 from email.policy import strict
 import streamlit as st
-from Models.CustomDQNModel import CustomDQNModel as model
 import json
+#import CustomDQNModel as model
+from Services import IchimokuDataRetriver as model
 import Services.Db_Manager as dbm
 from streamlit_ace import st_ace
 from Models.Flex_Envoirment import EnvFlex as env
 from Services import IchimokuDataRetriver as ichi
 import pandera as pdr # per la validazione degli schemi
-from Models.Reward_Function import Reward_Function as rw
-from Models.Training_Model import Training_Model as tm
+from Models import Reward_Function as rw
+from Models import Training_Model as tm
 
 st.set_page_config(
     page_title='Home',
-    page_title='Home',
     page_icon=''
     )
-
 st.sidebar.button('bottone')
 
 defoult_code = '''

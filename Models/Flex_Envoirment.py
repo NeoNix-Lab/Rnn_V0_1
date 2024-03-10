@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from turtle import done
-from typing import Callable, Self
+from typing import Callable
 import pandas as pd
 from ctypes import Array
 import gym as gym

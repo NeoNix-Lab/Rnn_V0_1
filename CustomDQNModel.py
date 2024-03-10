@@ -1,9 +1,15 @@
 from abc import abstractclassmethod
+from enum import Enum
 import json
 from os import name
 import tensorflow as tf
-from keras.layers import deserialize
 from Services import Db_Manager as dbm
+
+class type(Enum):
+
+        INPUT = 'input'
+        HIDDEN = 'hidden'
+        OUTPUT = 'output'
 
 class Layers():
 
@@ -12,22 +18,26 @@ class Layers():
               layer TEXT,
               name TEXT,
               note TEXT,
+              type TEXT,
+              schema TEXT,
           );
           '''
 
-    INSERT_QUERY = '''INSERT INTO layers (layer, name, note)
-           VALUES (?, ?, ?);'''
+    INSERT_QUERY = '''INSERT INTO layers (layer, name, note, type, schema)
+           VALUES (?, ?, ?, ?, ?);'''
 
-    def __init__(self, layer, name, notes='no_notes'):
-        self.id = 'Not_posted'
+    def __init__(self, layer, name, type:type, schema=str, notes='no_notes', id='Not_posted'):
+        self.id = id
         self.layer = layer
         self.name = name
+        self.type = type
+        self.schema = schema
         self.note = notes
 
     def push_layer(self):
-        tulp = [(self.layer, self.name, self.note)]
+        tulp = [(self.layer, self.name, self.note, self.type, self.schema)]
 
-        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'layer', 0, 'layers')
+        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'layer', self.layer, 'layers')
 
 class CustomDQNModel(tf.keras.Model):
 
@@ -53,12 +63,20 @@ class CustomDQNModel(tf.keras.Model):
 
     DB_RELATION_INSERT_QUERY = '''INSERT INTO model_layer_relation  (id_model, id_layer)
            VALUES (?, ?);'''
-
-    def __init__(self, layer_config, name=None, notes='No Notes', layer_notes='no layer notes'):
+    
+    # TODO creare i layers da lista oggetti
+    def __init__(self, lay_obj, name=None, notes='No Notes', layer_notes='no layer notes'):
         super().__init__(name=name)
-        self.model_layers = []
-        for config in layer_config:
-            layer_type = config['type']
+        self.schema_data = None
+        self.schema_input = None
+        self.schema_output = None
+        self.lay_obj = lay_obj
+
+        self.find_sschemas()
+
+        #self.model_layers = []
+        for config in lay_obj:
+            layer_type = config.layer['type']
             config.pop('type')
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
@@ -75,6 +93,20 @@ class CustomDQNModel(tf.keras.Model):
 
         return x
 
+    def find_sschemas(self):
+
+        for lay in self.lay_obj:
+            if lay.type == type.HIDDEN:
+                self.schema_data = lay.schema
+
+            if lay.type == type.INPUT:
+                self.schema_input= lay.schema
+
+            if lay.type == type.OUTPUT:
+                self.schema_output= lay.schema
+
+        self.chek_schemas()
+
     def push_on_db(self, notes='No Notes', layer_notes='no layer notes'):
 
         dbm.try_table_creation(self.DB_SCHEMA)
@@ -86,12 +118,17 @@ class CustomDQNModel(tf.keras.Model):
             obj_tulpe_list = [(self.serialize_to_json()[0], self.name, notes)]
             dbm.push(obj_tulpe_list, self.DB_SCHEMA, self.INSERT_QUERY)
 
-            tulpe_lay_list = []
             ser_lay = self.serialize_Layers_to_json()
-            for i in range(len(ser_lay)):
-                tulpe_lay_list.append((ser_lay[i], self.layers[i].name, layer_notes))
 
-            dbm.push(ser_lay, Layers.DB_SCHEMA, Layers.INSERT_QUERY)
+            # Devo puschare gòi oggetti copo verifica di corrispondenza 
+            if ser_lay.count != ser_lay.count:
+                raise ValueError('Uncorresponding N_ Layers')
+            
+            else:
+                for i in range(len(ser_lay)):
+                    self.lay_obj[i].layer = ser_lay[i]
+                    self.lay_obj[i].name = ser_lay[i].name
+                    self.lay_obj[i].push_layer()
 
             # Recupero gli id inseriti per creare la tabella relazionale
             ids = dbm.exists_retrieve('id', 'layer', 'layers', ser_lay)
@@ -152,17 +189,24 @@ class CustomDQNModel(tf.keras.Model):
         if self.is_json(list_serialized_layers[0]):
             
             for lay in list_serialized_layers:
-                des = deserialize(json.loads(lay))
+                des = tf.keras.deserialize(json.loads(lay))
                 layers.append(des)
 
         else:
             if isinstance(list_serialized_layers[0], dict):
                 for lay in list_serialized_layers:
-                    layers.append(deserialize(lay))
+                    layers.append(tf.keras.deserialize(lay))
             else:
                 raise ValueError('Unsupported Type Error, please provide dict or json lists()')
 
-    # Metodi Ausiliari
+    ######################### Metodi Ausiliari
+    #TODO: pusch degli oggetti layers
+
+    # verifico la scrittura degli schemi:
+    def chek_schemas(self):
+        if self.schema_data == None or self.schema_output == None or self.schema_input == None:
+            raise ValueError('Missed schema')
+
     # Verifico se e dict o json
     def is_json(self, myjson):
         try:

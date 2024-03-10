@@ -71,7 +71,7 @@ class Training_Model():
                 log_path=record[6],
                 best_result=record[7],
                 notes=record[8],
-                name=record[9]
+                name=record[9],
                 _id=record[0]  # Assumi che il primo elemento del record sia l'ID
             )
             return training_model

@@ -13,6 +13,9 @@
     <RootNamespace>Rnn_V01</RootNamespace>
     <InterpreterId>Global|VisualStudio|Env_Cloned</InterpreterId>
     <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Environment>PYTHONPATH "C:\Users\user\source\repos\Rnn_V01"</Environment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,7 +26,8 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Models\CustomDQNModel.py" />
+    <Compile Include="CustomDQNModel.py" />
+    <Compile Include="Models\moduli_verifica.py" />
     <Compile Include="Models\Process.py">
       <SubType>Code</SubType>
     </Compile>
@@ -35,13 +39,14 @@
     <Compile Include="pages\Ui_function.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pages\__init__.py" />
     <Compile Include="Services\Db_Manager.py" />
     <Compile Include="Models\Flex_Envoirment.py" />
     <Compile Include="Services\IchimokuDataRetriver.py" />
     <Compile Include="Services\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="test.py">
+    <Compile Include="t.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ui_Exe.py" />
