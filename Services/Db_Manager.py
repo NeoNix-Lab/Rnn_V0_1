@@ -4,9 +4,10 @@ import json
 from typing import List, Tuple, Union, Any
 
 # Db base path
+# TODO: probabilmente sara necessario aggiornare la path del db on Run
 DB_BASE_PATH = 'C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db'
 
-@staticmethod
+#@staticmethod
 def try_table_creation(tab_schema):
      try:
         conn = sqlite3.connect(DB_BASE_PATH)
@@ -23,6 +24,7 @@ def try_table_creation(tab_schema):
      finally:
          if conn:
              conn.close()
+
 @staticmethod
 def change_db_path(path):
     global DB_BASE_PATH
@@ -32,26 +34,24 @@ def change_db_path(path):
 
     DB_BASE_PATH = path
 
-@staticmethod
-def retrive_all(obj_name, tab_name):
+def retrive_all(tab_name):
     try:
         conn = sqlite3.connect(DB_BASE_PATH)
         cursor = conn.cursor()
         # Prepara la query SQL per cercare un layer con lo stesso nome e configurazione
-        query = f'''SELECT {obj_name} FROM {tab_name}'''
+        query = f'''SELECT * FROM {tab_name}'''
         cursor.execute(query)
-        layers = cursor.fetchall()
+        all = cursor.fetchall()
         
-        return layers
+        return all
 
     except sqlite3.Error as e:
-        print(f"Errore durante il recupero di tutti gli oggetti {obj_name}: {e}")
+        print(f"Errore durante il recupero di tutti gli oggetti da: {tab_name}: {e}")
 
     finally:
        if conn:
            conn.close()
 
-@ staticmethod
 def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str, bool, Any]]:
 
     """
@@ -90,7 +90,7 @@ def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str
         return results
 
     except sqlite3.Error as e:
-        print(f"Errore durante la verifica dell'esistenza degli oggetti in {tab_name}: {e}")
+        print(f"Errore durante la verifica dell esistenza degli oggetti in {tab_name}: {e}")
         return [(obj_value, False, None) for obj_value in obj_values]  # Restituisce False e None per ogni valore in caso di errore
 
     finally:
@@ -139,7 +139,7 @@ def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> Li
        if conn:
            conn.close()
 
-@staticmethod
+#@staticmethod
 def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_index=None, tabb_name=None):
     """
     Inserisce qualsiasi lista di oggetti sulla base di una query ed uno schema , evita inserimenti multipli se unique_colum, unique colum e tabb name sono 
@@ -159,10 +159,11 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
 
         for obj in obj_list:
             if unique_colum is not None and unique_value_index is not None and tabb_name is not None:
-                check_query = f"SELECT EXISTS(SELECT 1 FROM {tabb_name} WHERE {unique_colum}=?"
+                check_query = f"SELECT EXISTS(SELECT 1 FROM {tabb_name} WHERE {unique_colum}=?)"
                 check_values = (obj[unique_value_index],)
                 cursor.execute(check_query, check_values)
                 exists = cursor.fetchone()[0]
+                print(exists)
 
                 if not exists:
                     cursor.execute(query, obj)
@@ -173,7 +174,7 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
         conn.commit()
 
     except sqlite3.Error as e:
-        print(f"Errore durante il push di {obj_list} in {query}: {e}")
+        print(f"Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
         if conn:
             conn.rollback()  # Annulla le modifiche in caso di errore
 
