@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>Rnn_V01</Name>
     <RootNamespace>Rnn_V01</RootNamespace>
-    <InterpreterId>Global|VisualStudio|Env_Cloned</InterpreterId>
+    <InterpreterId>Global|VisualStudio|enn_tre</InterpreterId>
     <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
@@ -27,7 +27,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CustomDQNModel.py" />
-    <Compile Include="Models\moduli_verifica.py" />
+    <Compile Include="Models\dati.py" />
     <Compile Include="Models\Process.py">
       <SubType>Code</SubType>
     </Compile>
@@ -37,6 +37,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pages\Ui_function.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="pages\Ui_layers.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pages\__init__.py" />
@@ -53,17 +56,15 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
-    <Folder Include="React_Components\" />
     <Folder Include="pages\" />
     <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Base_roadmap.txt" />
-    <Content Include="React_Components\JavaScript1.js" />
     <Content Include="Risorse_Esterne.txt" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|VisualStudio|Env_Cloned" />
+    <InterpreterReference Include="Global|VisualStudio|enn_tre" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

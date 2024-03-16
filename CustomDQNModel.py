@@ -1,4 +1,3 @@
-from abc import abstractclassmethod
 from enum import Enum
 import json
 from os import name
@@ -37,7 +36,7 @@ class Layers():
     def push_layer(self):
         tulp = [(self.layer, self.name, self.note, self.type, self.schema)]
 
-        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'layer', self.layer, 'layers')
+        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'layer', 0, 'layers')
 
 class CustomDQNModel(tf.keras.Model):
 
@@ -71,18 +70,21 @@ class CustomDQNModel(tf.keras.Model):
         self.schema_input = None
         self.schema_output = None
         self.lay_obj = lay_obj
+        self.model_layers = []
 
-        self.find_sschemas()
+        # TODO : fixare la conversione da dizionario ad oggetto
+        #self.find_sschemas()
 
         #self.model_layers = []
-        for config in lay_obj:
-            layer_type = config.layer['type']
-            config.pop('type')
+        for layer_config in lay_obj:
+            layer_type = layer_config['type']
+            config = {key: value for key, value in layer_config.items() if key != 'type'}
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
                 self.model_layers.append(layer)
-            except:
-                raise ValueError('Layer non Instanziato')
+                print(layer)
+            except ValueError as e:
+                raise ValueError(f'Layer non Instanziato {e}')
 
         self.push_on_db(notes=notes, layer_notes=layer_notes)
 
@@ -111,7 +113,10 @@ class CustomDQNModel(tf.keras.Model):
 
         dbm.try_table_creation(self.DB_SCHEMA)
 
-        exsist = dbm.exists_retrieve('model', self.serialize_to_json[0],'models')
+        serializzati = self.serialize_to_json()[0]
+        print(serializzati)
+
+        exsist = dbm.exists_retrieve('model', serializzati,'models')
         if not exsist[1]:
 
             # Recupero le tulpe per l insereimento dei layer
@@ -134,6 +139,7 @@ class CustomDQNModel(tf.keras.Model):
             ids = dbm.exists_retrieve('id', 'layer', 'layers', ser_lay)
 
             # Carico il modello:
+            #TODO: Aggiungi i prametri di push necessaria ad evitare doppioni
             mod_tulpa = [(self.serialize_to_json[0], self.serialize_to_json[1], notes)]
             dbm.push(mod_tulpa, self.DB_SCHEMA, self.INSERT_QUERY)
 

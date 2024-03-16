@@ -10,7 +10,7 @@ class Rewar_Function():
                function TEXT,
                data_schema TEXT,
                action_schema TEXT,
-               status_schema TEXT,  -- Chiave esterna che fa riferimento a 'models'
+               status_schema TEXT,
                notes TEXT
            );
            '''
@@ -30,24 +30,24 @@ class Rewar_Function():
         data_tulpe = [(self.name, self.funaction, self.data_schema, self.action_schema, self.status_schema, notes),]
         dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'function', 1, 'functions')
 
-    def push(self, note='No'):
-        obj = (self.name, self.funaction, self.data_schema, self.action_schema, self.status_schema, note)
-        try:
-            conn = sqlite3.connect('C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db')
-            cursor = conn.cursor()
-            cursor.execute(self.INSERT_QUERY, obj)
+    #def push(self, note='No'):
+    #    obj = (self.name, self.funaction, self.data_schema, self.action_schema, self.status_schema, note)
+    #    try:
+    #        conn = sqlite3.connect('C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db')
+    #        cursor = conn.cursor()
+    #        cursor.execute(self.INSERT_QUERY, obj)
 
-            conn.commit()
-            print(obj)
+    #        conn.commit()
+    #        print(obj)
 
-        except sqlite3.Error as e:
-            print(f"Errore durante il push di {obj} : {e}")
-            if conn:
-                conn.rollback()  # Annulla le modifiche in caso di errore
+    #    except sqlite3.Error as e:
+    #        print(f"Errore durante il push di {obj} : {e}")
+    #        if conn:
+    #            conn.rollback()  # Annulla le modifiche in caso di errore
 
-        finally:
-            if conn:
-                conn.close()
+    #    finally:
+    #        if conn:
+    #            conn.close()
 
     def get_specific_funtion(self):
         pass
@@ -57,7 +57,7 @@ class Rewar_Function():
         try:
             return Rewar_Function(obj[1],obj[2],obj[3],obj[4],obj[5],obj[0])
         except ValueError as e :
-            raise ValueError(f'Errore nella conversione di una funzione da db ad obj ERROR: {e}')
+            raise ValueError(f'Errore nella conversione di una funzione da db ad obj_Function ERROR: {e}')
         
 
     def verifty_exisistence(self):

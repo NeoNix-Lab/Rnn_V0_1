@@ -1,9 +1,17 @@
-from Services import IchimokuDataRetriver as ichi
-from Models import Reward_Function as cu
-import CustomDQNModel as model
-import streamlit as st
+from Models.dati import Dati as d
+from Services.IchimokuDataRetriver import fetch_data_from_detailId as f, fetch_details as fd
 
-data = ichi.fetch_details()
+print(fd())
 
-st.title('tit')
-st.write(data)
+data = f(14222)
+
+obj = d(data, 'Primpo')
+
+print ('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+#print (obj.data_schema_txt)
+
+#print('##@@@@@@@@@@@@@@############')
+lis = d.retrive_all_from_db()
+for l in lis:
+    print(l.name+':  '+ f'{l.data_schema}')
+

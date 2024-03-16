@@ -1,6 +1,5 @@
 import streamlit as st
 import streamlit_shadcn_ui as ui
-from Models import Reward_Function
 from Services import IchimokuDataRetriver as ichi, Db_Manager as db
 from streamlit_ace import st_ace
 from Models.Reward_Function import Rewar_Function as Rw
@@ -97,9 +96,6 @@ schema: lista di dizionari
     1:action 
     2:status
 """
-
-DEBBBU = 0
-x=1
 
 st.set_page_config(
     page_title="Rnn_Function_Builder",
