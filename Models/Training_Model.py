@@ -9,7 +9,7 @@ class Training_statu(Enum):
     TRAINED = 'trained'
 
 class Training_Model():
-
+    # TODO: aggiungere i trading data as dictionary fees, initial_balance
     DB_SCHEMA = '''CREATE TABLE IF NOT EXISTS training (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                status TEXT,

@@ -25,7 +25,6 @@ def try_table_creation(tab_schema):
          if conn:
              conn.close()
 
-@staticmethod
 def change_db_path(path):
     global DB_BASE_PATH
 
@@ -97,7 +96,6 @@ def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str
        if conn:
            conn.close()
 
-@ staticmethod
 def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> List[any]:
 
     """
@@ -163,7 +161,7 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
                 check_values = (obj[unique_value_index],)
                 cursor.execute(check_query, check_values)
                 exists = cursor.fetchone()[0]
-                print(exists)
+                #print(exists)
 
                 if not exists:
                     cursor.execute(query, obj)
@@ -173,8 +171,8 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
 
         conn.commit()
 
-    except sqlite3.Error as e:
-        print(f"Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
+    except ValueError as e:# sqlite3.Error as e:
+        raise(f"Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
         if conn:
             conn.rollback()  # Annulla le modifiche in caso di errore
 

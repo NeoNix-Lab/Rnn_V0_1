@@ -47,14 +47,15 @@ class Process():
                 n_episode INTEGER,
                 epochs INTEGER,
                 type TEXT,
+                windows_size REAL
           );
           '''
 
-    INSERT_QUERY = '''INSERT INTO processes (name, description, epsilon_start, epsilon_end, epsilon_reduce, gamma, tau, learning_rate, optimizer, loss, n_episode, epochs, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
+    INSERT_QUERY = '''INSERT INTO processes (name, description, epsilon_start, epsilon_end, epsilon_reduce, gamma, tau, learning_rate, optimizer, loss, n_episode, epochs, type, windows_size)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
 
-    def __init__(self, name, episodi=1, epoche=5, notes='No notes', epsilon_start=1.0, epsilon_end=0.01, epsilon_reduce=0.995, gamma=0.95, tau=0.125, learning_rate=0.001, optimizer:ProcessOptimizer=ProcessOptimizer.ADAM.value, 
-        loss_functions:ProcessLossFunction=ProcessLossFunction.MEAN_SQUARED_ERROR.value, epochs=1000, type_=process_type.SERIE.value, _id='not posted yet'):
+    def __init__(self, name, episodi=1, epoche=5, notes='No notes', epsilon_start=1.0, epsilon_end=0.01, epsilon_reduce=0.995, gamma=0.95, tau=0.125, learning_rate=0.001, optimizer:ProcessOptimizer=ProcessOptimizer.ADAM, 
+        loss_functions:ProcessLossFunction=ProcessLossFunction.MEAN_SQUARED_ERROR, epochs=1000, type_=process_type.SERIE, _id='not posted yet', window_size=20):
 
         self.name = name
         self.description = notes
@@ -70,23 +71,24 @@ class Process():
         self.n_episode = episodi
         self.type = type_
         self.id = _id
+        self.window_size = window_size
 
 
-    def push_layer(self):
+    def push_process(self):
         tulp = [(
             self.name, self.description, self.epsilo_start, self.epsilon_end, self.epsilon_reduce, self.gamma, self.tau, 
-            self.learning_rate, self.optimizer, self.loss, self.n_episode, self.epochs, self.type
+            self.learning_rate, self.optimizer.value, self.loss.value, self.n_episode, self.epochs, self.type.value, self.window_size
         )]
 
-        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 0, 'processes')
+        dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 1, 'processes')
 
-    @abstractmethod
+    @staticmethod
     def build_process_from_record(record):
         try:
             process = Process(name=record[1], notes=record[2], epsilon_start=record[3], epsilon_end=record[4], 
                 epsilon_reduce=record[5], gamma=record[6], tau=record[7], learning_rate=record[8], 
                 optimizer=record[9], loss_functions=record[10], episodi=record[11], epoche=record[12], 
-                type_=record[13], _id=record[0])
+                type_=record[13], _id=record[0], window_size=record[14])
 
             return process
         except Error as e:
@@ -95,4 +97,13 @@ class Process():
     @abstractmethod
     def retrive_list_records_by_name(names:list[str]):
         return dbm.retive_a_list_of_recordos('name', 'processes', names)
+
+    def print_attributo(self, nome_attributo):
+        # Utilizza getattr per ottenere il valore dell'attributo dal suo nome
+        if hasattr(self, nome_attributo):
+            valore = getattr(self, nome_attributo)
+            tipo = type(valore).__name__
+            print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
+        else:
+            print(f"L'attributo '{nome_attributo}' non esiste.")
         

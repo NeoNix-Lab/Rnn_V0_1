@@ -1,9 +1,10 @@
 from abc import abstractclassmethod
 from Services import Db_Manager as dbm
 import sqlite3
-
+import json
 
 class Rewar_Function():
+    #TODO: attenzione all ordine degli schemi
     DB_SCHEMA = '''CREATE TABLE IF NOT EXISTS functions (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                name TEXT,
@@ -18,7 +19,7 @@ class Rewar_Function():
     INSERT_QUERY = '''INSERT INTO functions (name, function, data_schema, action_schema, status_schema, notes)
            VALUES (?, ?, ?, ?, ?, ?);'''
 
-    def __init__(self, name, function, data_schema, action_schema, status_schema, id = 'not_posted_yet'):
+    def __init__(self, name, function, data_schema:dict, action_schema:dict, status_schema:dict, id = 'not_posted_yet'):
         self.id = id
         self.name = name
         self.funaction = function
@@ -27,8 +28,16 @@ class Rewar_Function():
         self.status_schema = status_schema
 
     def pusch_on_db(self, notes='No Notes'):
-        data_tulpe = [(self.name, self.funaction, self.data_schema, self.action_schema, self.status_schema, notes),]
-        dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'function', 1, 'functions')
+        try:
+            dat = json.dumps(self.data_schema)
+            act = json.dumps(self.action_schema)
+            stat = json.dumps(self.status_schema)
+
+            data_tulpe = [(self.name, self.funaction, dat, act, stat, notes),]
+            dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'function', 1, 'functions')
+        except ValueError as e:
+            raise e
+       
 
     #def push(self, note='No'):
     #    obj = (self.name, self.funaction, self.data_schema, self.action_schema, self.status_schema, note)
@@ -55,7 +64,11 @@ class Rewar_Function():
     @staticmethod
     def convert_db_response(obj):
         try:
-            return Rewar_Function(obj[1],obj[2],obj[3],obj[4],obj[5],obj[0])
+            act_sch = json.loads(obj[4])
+            dat_sch = json.loads(obj[3])
+            stat_sch = json.loads(obj[5])
+
+            return Rewar_Function(obj[1],obj[2],dat_sch, act_sch,stat_sch,obj[0])
         except ValueError as e :
             raise ValueError(f'Errore nella conversione di una funzione da db ad obj_Function ERROR: {e}')
         

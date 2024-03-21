@@ -3,17 +3,24 @@ import streamlit_shadcn_ui as ui
 from Services import IchimokuDataRetriver as ichi, Db_Manager as db
 from streamlit_ace import st_ace
 from Models.Reward_Function import Rewar_Function as Rw
+from Models.dati import Dati as d
 
-############### UTILS
+
+#region UTILS / BASELINE
+# HINT: potrei caricare i dati , creare la funzione sui dati poi l ambiente prima di verificare tramite uno step fittizio l efficacia e solo dopo salvare 
+# schema funzione e relativa relazione , l ambiente viene da se quando passo lo schema azioni e stati dalla funzione all ambiente
+# viceversa quando carico una funzione, carico il relativo schema dati , aspetto nuovi dati filtrati, li inserisco 
+# creo a parte un modello che aspetta in numero di barre dal processo, creo un processo relazionato alla funzione e al modello e relaziono
+# una funzione a tanti modelli
 
 # printa il tipo per ogni attributo di un oggetto x
 def print_attributes(obj):
     for attr in vars(obj):
         valore = getattr(obj, attr)
         print(f"{attr}: {valore}, Tipo: {type(valore)}")
+#endregion  
 
-
-################ CODE
+#region GLOBBAL VAR
 DEFOULT_CODE = '''
 def flex_buy_andSell(env, price_column_name: str, action: str):
     price = env.Obseravtion_DataFrame[price_column_name][env.current_step]
@@ -96,6 +103,8 @@ schema: lista di dizionari
     1:action 
     2:status
 """
+#endregion
+
 
 st.set_page_config(
     page_title="Rnn_Function_Builder",
@@ -112,16 +121,54 @@ st.set_page_config(
 st.title('Reward_Functions')
 st.subheader('Set, Save or Load your RL Function')
 
+#region DATA aggiungo una sezione per il recupero dei dati
+if 'Data' not in st.session_state:
+    set_dati = ichi.fetch_details() 
+    lis_dati = set_dati['Id']
+    
+    data_name = st.text_input('insert dati name')
+    data_notes = st.text_input('insert dati notes')
+
+    sel = st.selectbox('Select your set', lis_dati)
+
+    if sel:
+        if data_notes == '':
+            data_notes = 'building schema from ui'
+        data = ichi.fetch_data_from_detailId(sel)
+        dat = d(name=data_name, data=data, notes=data_notes)
+        st.session_state.Data = dat#ichi.fetch_data_from_detailId(sel).head(5)
+
+if 'Data' in st.session_state:
+
+    if st.sidebar.checkbox('Display _data'):
+         st.write(st.session_state.Data._dati.head(5))
+         remover = st.multiselect('Remove Columns', st.session_state.Data._dati.columns)
+         remove = st.button('Save new D_Frame')
+         if remove:
+             new_data = st.session_state.Data._dati.drop(columns=remover)
+             up_resoult = st.session_state.Data.update_dati(new_data)
+
+             if up_resoult == d.DatiVerifica.VERIFICATI:
+                 st.success(up_resoult)
+             else:
+                 st.warning(up_resoult)
+
+    if st.sidebar.button('Clear_Data'):
+        st.session_state.pop('Data')
+# TODO: e qui c e gia una correlazione fra lo schema e le logiche 
+#endregion 
+
 build_btn = st.radio('Select Mode', ['Load', 'Create'], key='Load_Create')
 
+#region LOAD
+#HACK : trasformare in una funzione 
+#TODO : aggiungere una voto alle funzioni per agevolare la navigazione e le correzzioni
 if build_btn == 'Load':
-    st.text('start')
     objs = db.retrive_all('functions')
 
     lis = []
     lis_name = []
-    #HACK : trasformare in una funzione 
-    #TODO : aggiungere una voto alle funzioni per agevolare la navigazione e le correzzioni
+   
     for obj in objs:
         var = Rw.convert_db_response(obj)
         lis.append(var)
@@ -131,16 +178,20 @@ if build_btn == 'Load':
     if box:
         index = lis_name.index(box)
 
-        if 'Obj' not in st.session_state:
-            st.session_state.Obj = lis[index]
+        if 'Obj_Function' not in st.session_state:
+            st.session_state.Obj_Function = lis[index]
         else:
-            st.session_state.Obj = lis[index]
+            st.session_state.Obj_Function = lis[index]
+#endregion
 
-
-if build_btn == 'Create' and 'Obj' not in st.session_state and 'Pushed' not in st.session_state:
-    # TODO: verificare la struttura della tabella di env per assicurare la difficile compatibilita
-    # TODO: aggiungere funzione per visulizzare some data in order to optimize data_schema function
+#region CREATE if not pushed
+# TODO: verificare la struttura della tabella di env per assicurare la difficile compatibilita
+# TODO: aggiungere funzione per visulizzare some data in order to optimize data_schema function
+if build_btn == 'Create' and 'Obj_Function' not in st.session_state and 'Pushed' not in st.session_state:
+   
     name = st.text_input('Insert your Logic Name')
+
+    #
     st.text(CODE_HINT)
     content = st_ace(language="python", theme="dracula", keybinding="vscode", font_size=16, tab_size=4, value=DEFOULT_CODE)
     var = exec(content)
@@ -148,7 +199,6 @@ if build_btn == 'Create' and 'Obj' not in st.session_state and 'Pushed' not in s
     f_build_btn = st.button('Build_Rw_Obj')
     if f_build_btn:
         try:
-
             if 'Content' not in st.session_state:
                st.session_state.Content = content
             else:
@@ -163,50 +213,58 @@ if build_btn == 'Create' and 'Obj' not in st.session_state and 'Pushed' not in s
                 st.session_state.Premia = locals()['premia']
             else:
                 st.session_state.Premia = locals()['premia']
+
+            st.write(locals()['schema'])
+            #[st.write(i) for i in st.session_state.Schemas]
         
         except ValueError as e:
             raise ValueError(f'Mancato recupero delle funzioni error: {e}')
 
         
-        obj = Rw(name, st.session_state.Content, str(st.session_state.Schemas[0]), str(st.session_state.Schemas[1]), str(st.session_state.Schemas[2]),)
+        obj = Rw(name, st.session_state.Content, st.session_state.Schemas[0], st.session_state.Schemas[1], st.session_state.Schemas[2],)
 
-        if 'Obj' not in st.session_state:
-            st.session_state.Obj = obj
+        if 'Obj_Function' not in st.session_state:
+            st.session_state.Obj_Function = obj
         else:
-            st.session_state.Obj = obj
+            st.session_state.Obj_Function = obj
 
         st.experimental_rerun()
 
-if 'Obj' in st.session_state :
-    options = st.session_state.Obj.__dict__.keys()
+if 'Obj_Function' in st.session_state :
+    #region Verify SCHEMAS COERENCY 
+    #TODO: dato il casino che sta saltando fuori con le verifiche le rimando a dopo
+    #endregion
+
+    options = st.session_state.Obj_Function.__dict__.keys()
     bx = st.sidebar.selectbox('Visualizza gli elementi della funzione memorizzata', options)
     if bx:
         if bx == 'funaction':
             st.sidebar.write(f'{bx} :')
-            st.sidebar.text(st.session_state.Obj.__dict__[bx])
+            st.sidebar.text(st.session_state.Obj_Function.__dict__[bx])
         else:
            st.sidebar.write(f'{bx} :')
-           st.sidebar.write(st.session_state.Obj.__dict__[bx])
+           st.sidebar.write(st.session_state.Obj_Function.__dict__[bx])
     
     if 'Pushed' not in st.session_state and build_btn == 'Create':
         notes = st.text_input('Insert additional notes')
 
         if st.button('Pusch'):
-            
-            print_attributes(st.session_state.Obj)
-            st.session_state.Obj.pusch_on_db(notes)
+            st.session_state.Obj_Function.pusch_on_db(notes)
 
             if 'Pushed' not in st.session_state:
                 st.session_state.Pushed = True
 
-
-
     if st.sidebar.button('Clear current logic'):
-        st.session_state.pop('Obj')
+        st.session_state.pop('Obj_Function')
         st.session_state.pop('Pushed')
         st.experimental_rerun()
+#endregion 
 
+#region ENVIROMENTR
+# TODO : enviroment prende opzionalmente colonne aggiuntive ed una serie di dati che potrebbero esserre considerati parte del processo
+# ed una prima ricompensa (probabilmente inutile)
 
+#endregion
 
 if 'Data' in st.session_state:pass
     #walker = pyg.walk(st.session_state.Data)

@@ -4,7 +4,7 @@ from os import name
 import tensorflow as tf
 from Services import Db_Manager as dbm
 
-class type(Enum):
+class layers_type(Enum):
 
         INPUT = 'input'
         HIDDEN = 'hidden'
@@ -18,14 +18,15 @@ class Layers():
               name TEXT,
               note TEXT,
               type TEXT,
-              schema TEXT,
+              schema TEXT
           );
           '''
 
     INSERT_QUERY = '''INSERT INTO layers (layer, name, note, type, schema)
            VALUES (?, ?, ?, ?, ?);'''
-
-    def __init__(self, layer, name, type:type, schema=str, notes='no_notes', id='Not_posted'):
+    
+    # TODO: schema non sara una stringa andra tipizzato serializzato , deserializzato
+    def __init__(self, layer:dict, name, type:layers_type, schema:dict, notes='no_notes', id='Not_posted'):
         self.id = id
         self.layer = layer
         self.name = name
@@ -34,9 +35,31 @@ class Layers():
         self.note = notes
 
     def push_layer(self):
-        tulp = [(self.layer, self.name, self.note, self.type, self.schema)]
+        layer_json = json.dumps(self.layer)
+        schema_json = json.dumps(self.schema)
+        tulp = [(layer_json, self.name, self.note, self.type.value, schema_json)]
 
+        # TODO : ho eliminato il controllo sui duplicati perche mi inmpediva troppi push
         dbm.push(tulp, self.DB_SCHEMA, self.INSERT_QUERY, 'layer', 0, 'layers')
+    
+    @staticmethod
+    def convert_db_response(obj):
+       try:
+           schema_des = json.loads(obj[5])
+           lay_deserialized = json.loads(obj[1])
+           enum_type = layers_type(obj[4])
+           return Layers(layer=lay_deserialized, name=obj[2], type=enum_type, schema=schema_des, notes=obj[3], id=obj[0])
+       except ValueError as e :
+           raise ValueError(f'Errore nella conversione di un layer da db ad obj_Layer ERROR: {e}')
+
+    def print_attributo(self, nome_attributo):
+        # Utilizza getattr per ottenere il valore dell'attributo dal suo nome
+        if hasattr(self, nome_attributo):
+            valore = getattr(self, nome_attributo)
+            tipo = type(valore).__name__
+            print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
+        else:
+            print(f"L'attributo '{nome_attributo}' non esiste.")
 
 class CustomDQNModel(tf.keras.Model):
 
@@ -64,7 +87,7 @@ class CustomDQNModel(tf.keras.Model):
            VALUES (?, ?);'''
     
     # TODO creare i layers da lista oggetti
-    def __init__(self, lay_obj, name=None, notes='No Notes', layer_notes='no layer notes'):
+    def __init__(self, lay_obj:dict, name=None):
         super().__init__(name=name)
         self.schema_data = None
         self.schema_input = None
@@ -75,18 +98,26 @@ class CustomDQNModel(tf.keras.Model):
         # TODO : fixare la conversione da dizionario ad oggetto
         #self.find_sschemas()
 
+    def build_layers(self, input_shape=None, notes='No Notes', layer_notes='no layer notes'):
         #self.model_layers = []
-        for layer_config in lay_obj:
+        if input_shape is not None:
+            try:
+                #HINT: tento la sovrascrittura della shape per manggiare diversi windows_size
+                self.lay_obj[0].layer['input_shape'][0] = input_shape
+            except ValueError as e :
+                raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
+
+        for layer_config in self.lay_obj:
             layer_type = layer_config['type']
-            config = {key: value for key, value in layer_config.items() if key != 'type'}
+            config = {key: value for key, value in layer_config['params'].items() if key != 'type'}
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
                 self.model_layers.append(layer)
                 print(layer)
             except ValueError as e:
                 raise ValueError(f'Layer non Instanziato {e}')
-
-        self.push_on_db(notes=notes, layer_notes=layer_notes)
+        # TODO : sospeso il pusch, inutile dei layer
+        #self.push_on_db(notes=notes, layer_notes=layer_notes)
 
     def call(self, inputs, training=None, mask=None):
         x = inputs
@@ -95,16 +126,25 @@ class CustomDQNModel(tf.keras.Model):
 
         return x
 
+    def print_attributo(self, nome_attributo):
+        # Utilizza getattr per ottenere il valore dell'attributo dal suo nome
+        if hasattr(self, nome_attributo):
+            valore = getattr(self, nome_attributo)
+            tipo = type(valore).__name__
+            print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
+        else:
+            print(f"L'attributo '{nome_attributo}' non esiste.")
+
     def find_sschemas(self):
 
         for lay in self.lay_obj:
-            if lay.type == type.HIDDEN:
+            if lay.type == layers_type.HIDDEN:
                 self.schema_data = lay.schema
 
-            if lay.type == type.INPUT:
+            if lay.type == layers_type.INPUT:
                 self.schema_input= lay.schema
 
-            if lay.type == type.OUTPUT:
+            if lay.type == layers_type.OUTPUT:
                 self.schema_output= lay.schema
 
         self.chek_schemas()

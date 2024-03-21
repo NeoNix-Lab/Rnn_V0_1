@@ -36,6 +36,9 @@
     <Compile Include="Models\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pages\Ui_Process.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pages\Ui_function.py">
       <SubType>Code</SubType>
     </Compile>
