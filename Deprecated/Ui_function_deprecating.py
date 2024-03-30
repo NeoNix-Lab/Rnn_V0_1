@@ -4,6 +4,7 @@ import streamlit_shadcn_ui as ui
 from Services import IchimokuDataRetriver as ichi, Db_Manager as db
 from streamlit_ace import st_ace
 from Models.Reward_Function import Rewar_Function as Rw
+from Models.dati import Dati as d
 from Models.Flex_Envoirment import EnvFlex as env
 import pandera as pdr
 
@@ -78,11 +79,17 @@ def premia(env, action):
     flex_buy_andSell(env, 'Price', action)
     fillTab(env)
 
-schema = {
- 'Action_Schema': {'wait': None, 'buy': None, 'sell': None}, 
- 'Status_Schema': {'flat': None, 'long': None, 'short': None}
-}
-
+schema = [
+{   
+    'wait' : None,
+    'buy' : None,
+    'sell' : None
+    },
+    {
+    'flat' : None,
+    'long' : None,
+    'short' : None}
+]
 '''
 
 # HACK: migliore il suggerimento
@@ -111,7 +118,46 @@ st.set_page_config(
 st.title('Reward_Functions')
 st.subheader('Set, Save or Load your RL Function')
 
+#region DATA aggiungo una sezione per il recupero dei dati
+if 'Data' not in st.session_state:
+    set_dati = ichi.fetch_details() 
+    lis_dati = set_dati['Id']
+    
+    data_name = st.text_input('insert dati name')
+    data_notes = st.text_input('insert dati notes')
 
+    sel = st.selectbox('Select your set', lis_dati)
+
+    if sel:
+        if data_notes == '':
+            data_notes = 'building schema from ui'
+        data = ichi.fetch_data_from_detailId(sel)
+        dat = d(name=data_name, data=data, notes=data_notes)
+        # TODO: removed data obj, using data_columns
+        st.session_state.Data = data#ichi.fetch_data_from_detailId(sel).head(5)
+
+if 'Data' in st.session_state:
+
+    if st.sidebar.checkbox('Display _data'):
+         st.write(st.session_state.Data.head(5))
+         remover = st.multiselect('Remove Columns', st.session_state.Data.columns)
+         remove = st.button('Save new D_Frame')
+         if remove:
+             new_data = st.session_state.Data._dati.drop(columns=remover)
+
+             st.session_state.Data = new_data
+
+             #up_resoult = st.session_state.Data.update_dati(new_data)
+
+             #if up_resoult == d.DatiVerifica.VERIFICATI:
+             #    st.success(up_resoult)
+             #else:
+             #    st.warning(up_resoult)
+
+    if st.sidebar.button('Clear_Data'):
+        st.session_state.pop('Data')
+# TODO: e qui c e gia una correlazione fra lo schema e le logiche 
+#endregion 
 
 build_btn = st.radio('Select Mode', ['Load', 'Create'], key='Load_Create')
 
@@ -169,35 +215,10 @@ if build_btn == 'Load':
 # TODO: verificare la struttura della tabella di env per assicurare la difficile compatibilita
 # TODO: aggiungere funzione per visulizzare some data in order to optimize data_schema function
 if build_btn == 'Create' and 'Obj_Function' not in st.session_state and 'Pushed' not in st.session_state:
-
-    #region DATA aggiungo una sezione per il recupero dei dati
-    if 'Data' not in st.session_state:
-        set_dati = ichi.fetch_details() 
-        lis_dati = set_dati['Id']
-        
-        sel = st.selectbox('Select your set', lis_dati)
-    
-        if sel:
-            data = ichi.fetch_data_from_detailId(sel)
-            st.session_state.Data = data
-    
-    if 'Data' in st.session_state:
-    
-        if st.sidebar.checkbox('Display _data'):
-             st.write(st.session_state.Data.head(5))
-             remover = st.multiselect('Remove Columns', st.session_state.Data.columns)
-             remove = st.button('Save new D_Frame')
-             if remove:
-                 new_data = st.session_state.Data.drop(columns=remover)
-    
-                 st.session_state.Data = new_data
-    
-        if st.sidebar.button('Clear_Data'):
-            st.session_state.pop('Data')
-#endregion 
    
     name = st.text_input('Insert your Logic Name')
 
+    #
     st.text(CODE_HINT)
     content = st_ace(language="python", theme="dracula", keybinding="vscode", font_size=16, tab_size=4, value=DEFOULT_CODE)
     var = exec(content)
@@ -222,13 +243,13 @@ if build_btn == 'Create' and 'Obj_Function' not in st.session_state and 'Pushed'
 
             pre_dikt = st.session_state.Data.head(1)
             dickt = pre_dikt.to_dict(orient='list')
-            st.session_state.Schemas['Data_Schema'] = dickt
+            st.session_state.Schemas.insert(0,dickt)
         
         except ValueError as e:
             raise ValueError(f'Mancato recupero delle funzioni error: {e}')
 
         
-        obj = Rw(name, st.session_state.Content, st.session_state.Schemas['Data_Schema'], st.session_state.Schemas['Action_Schema'], st.session_state.Schemas['Status_Schema'],)
+        obj = Rw(name, st.session_state.Content, st.session_state.Schemas[0], st.session_state.Schemas[1], st.session_state.Schemas[2],)
 
         if 'Obj_Function' not in st.session_state:
             st.session_state.Obj_Function = obj
@@ -241,6 +262,9 @@ if 'Obj_Function' in st.session_state :
     #region Verify SCHEMAS COERENCY 
     #TODO: dato il casino che sta saltando fuori con le verifiche le rimando a dopo
     #endregion
+
+    st.write(st.session_state.Schemas[0])
+    st.write(len(st.session_state.Schemas[0]))
 
     options = st.session_state.Obj_Function.__dict__.keys()
     bx = st.sidebar.selectbox('Visualizza gli elementi della funzione memorizzata', options)
@@ -272,6 +296,10 @@ if 'Obj_Function' in st.session_state :
 # ed una prima ricompensa (probabilmente inutile)
 
 #endregion
+
+if 'Data' in st.session_state:pass
+    #walker = pyg.walk(st.session_state.Data)
+
 
 # HACK: testing custom components
 

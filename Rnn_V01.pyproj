@@ -36,16 +36,19 @@
     <Compile Include="Models\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pages\Ui_Env.py" />
+    <Compile Include="pages\Ui_function.py" />
     <Compile Include="pages\Ui_Process.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="pages\Ui_function.py">
+    <Compile Include="Deprecated\Ui_function_deprecating.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pages\Ui_layers.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pages\__init__.py" />
+    <Compile Include="Priority.py" />
     <Compile Include="Services\Db_Manager.py" />
     <Compile Include="Models\Flex_Envoirment.py" />
     <Compile Include="Services\IchimokuDataRetriver.py" />
@@ -59,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
+    <Folder Include="Deprecated\" />
     <Folder Include="pages\" />
     <Folder Include="Services\" />
   </ItemGroup>

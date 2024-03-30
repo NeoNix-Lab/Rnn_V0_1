@@ -204,7 +204,7 @@ class EnvFlex(gym.Env):
     def set_Wind(self):
 
         minimo = self.current_step-self.window_size
-        massimo = self.current_step#+1
+        massimo = self.current_step
 
         datfram = self.data.iloc[minimo : massimo]
 

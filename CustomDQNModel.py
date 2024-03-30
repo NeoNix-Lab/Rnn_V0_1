@@ -87,7 +87,7 @@ class CustomDQNModel(tf.keras.Model):
            VALUES (?, ?);'''
     
     # TODO creare i layers da lista oggetti
-    def __init__(self, lay_obj:dict, name=None):
+    def __init__(self, lay_obj, name=None):
         super().__init__(name=name)
         self.schema_data = None
         self.schema_input = None
@@ -99,11 +99,12 @@ class CustomDQNModel(tf.keras.Model):
         #self.find_sschemas()
 
     def build_layers(self, input_shape=None, notes='No Notes', layer_notes='no layer notes'):
-        #self.model_layers = []
+        print(self.lay_obj)
         if input_shape is not None:
             try:
                 #HINT: tento la sovrascrittura della shape per manggiare diversi windows_size
-                self.lay_obj[0].layer['input_shape'][0] = input_shape
+                # TODO : definizione dei layer tramite dizionario e sovrascrittura della size troppo delicata
+                self.lay_obj[0]['params']['input_shape'][0] = input_shape
             except ValueError as e :
                 raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
 
@@ -113,11 +114,10 @@ class CustomDQNModel(tf.keras.Model):
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
                 self.model_layers.append(layer)
-                print(layer)
             except ValueError as e:
                 raise ValueError(f'Layer non Instanziato {e}')
-        # TODO : sospeso il pusch, inutile dei layer
-        #self.push_on_db(notes=notes, layer_notes=layer_notes)
+        # TODO : sospeso il pusch, inutile dei layer, rimandato pusch intero apost compilazione
+        self.push_on_db(notes=notes, layer_notes=layer_notes)
 
     def call(self, inputs, training=None, mask=None):
         x = inputs

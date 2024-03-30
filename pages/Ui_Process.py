@@ -69,7 +69,7 @@ def show_summary_in_sidebar(process):
     st.sidebar.text(f"Ottimizzatore: {process.optimizer}")
     st.sidebar.text(f"Funzione di Perdita: {process.loss}")
     st.sidebar.text(f"Numero Episodi: {process.n_episode}")
-    st.sidebar.text(f"Episodi: {process.epochs}")
+    st.sidebar.text(f"Epoche: {process.epochs}")
     st.sidebar.text(f"Tipo: {process.type}")
     st.sidebar.text(f"Dimensione Finestra: {process.window_size}")
 
@@ -117,10 +117,13 @@ if 'Process' in st.session_state:
             modello = mo(layer_S,'Test_1')
             #TODO: momentaneamente evito la sovrascrittura dell input_shape
             modello.build_layers()#input_shape=st.session_state.Process.window_size)
+
+            if 'Modello' not in st.session_state:
+                st.session_state.Modello = modello
+            else:
+                st.session_state.Modello = modello
+
         except ValueError as e:
             st.warning(e)
-        
-
-        st.write(modello.model_layers)
 
        

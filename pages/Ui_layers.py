@@ -179,7 +179,7 @@ else:
                     st.session_state.Layers.append(lis[i])
                 #[st.session_state.Layers.append(i)for i in selected]
             else:
-                st.session_state.Layers = []
+                st.session_state.Layers = [] #HACK: resetto la lista ogni volta
                 for i in indexes:
                     st.session_state.Layers.append(lis[i])
 

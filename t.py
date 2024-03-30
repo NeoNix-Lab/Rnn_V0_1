@@ -3,28 +3,37 @@ from Services.IchimokuDataRetriver import fetch_data_from_detailId as f, fetch_d
 from Services import Db_Manager as db
 from CustomDQNModel import Layers as lay, layers_type as ty
 import CustomDQNModel as model
-from Models.Process import Process as pr
+from Models.Training_Model import Training_Model as training, Training_statu as status
 
-lstm1_dict = {
-    "type": "LSTM",
-    "params": {
-        "units": 50,
-        "return_sequences": True,
-        "input_shape": (20,16),
-        "name": "LSTM"
-    }
-}
+
 obj = db.retrive_all('layers')
 objs=[]
 for i in obj:
     objs.append(lay.convert_db_response(i))
 
-layers_ = [lstm1_dict, objs[1].layer, objs[2].layer, objs[3].layer]
+ultimo_elemento = objs.pop()
+objs.insert(0,ultimo_elemento)
+
+print(f'@@@@@@@@@@@@@@@@@@@@@@{len(objs)}')
+print(f'@@@@@@@@@@@@@@@@@@@@@@{type(objs[0])}')
 
 
-modello = model.CustomDQNModel(layers_,'Test_1')
+_lay = []
+for i in objs:
+    _lay.append(i.layer)
+
+modello = model.CustomDQNModel(_lay,'Test_1')
 
 print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.model_layers}')
 
-modello.build_layers()
+modello.build_layers(33)
 print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.model_layers}')
+print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.lay_obj}')
+
+#train = training('tra_name',status.PLANNED,0,0, 'dsfasd')
+#l=[1,1,1,1,1]
+#train.pusch_on_db(l,'Pusch from Ui_Env')
+
+#resoult = db.retive_a_list_of_recordos('id','process',[1])
+
+#print(resoult)

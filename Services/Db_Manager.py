@@ -7,7 +7,6 @@ from typing import List, Tuple, Union, Any
 # TODO: probabilmente sara necessario aggiornare la path del db on Run
 DB_BASE_PATH = 'C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db'
 
-#@staticmethod
 def try_table_creation(tab_schema):
      try:
         conn = sqlite3.connect(DB_BASE_PATH)
@@ -137,7 +136,6 @@ def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> Li
        if conn:
            conn.close()
 
-#@staticmethod
 def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_index=None, tabb_name=None):
     """
     Inserisce qualsiasi lista di oggetti sulla base di una query ed uno schema , evita inserimenti multipli se unique_colum, unique colum e tabb name sono 
@@ -161,7 +159,6 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
                 check_values = (obj[unique_value_index],)
                 cursor.execute(check_query, check_values)
                 exists = cursor.fetchone()[0]
-                #print(exists)
 
                 if not exists:
                     cursor.execute(query, obj)
@@ -171,8 +168,10 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
 
         conn.commit()
 
-    except ValueError as e:# sqlite3.Error as e:
-        raise(f"Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
+    except ValueError as e:
+        #print(f"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
+        raise(f"Errore durante il push di : {e}")
+
         if conn:
             conn.rollback()  # Annulla le modifiche in caso di errore
 
@@ -180,144 +179,21 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
         if conn:
             conn.close()
 
-#def layer_all():
-#        try:
-#            conn = sqlite3.connect(DB_BASE_PATH)
-#            cursor = conn.cursor()
-#            # Prepara la query SQL per cercare un layer con lo stesso nome e configurazione
-#            query = '''SELECT layer FROM layers'''
-#            cursor.execute(query)
-#            layers = cursor.fetchall()
-            
-#            return layers
+def retrive_last(tab_name, prop_name='id'):
+    try:
+        conn = sqlite3.connect(DB_BASE_PATH)
+        cursor = conn.cursor()
+        query = f"SELECT {prop_name} FROM {tab_name} ORDER BY id DESC LIMIT 1"
+        cursor.execute(query)
+        record  = cursor.fetchone()
 
-#        except sqlite3.Error as e:
-#            print(f"Errore durante la verifica dell'esistenza del layer: {e}")
+        return record
+    except ValueError as e:
+        print(f"##################################Errore durante il recupero dell ultimo di {prop_name} nella ttabella {tab_name}: {e}")
+        raise(f"Errore durante il recupero dell ultimo di {prop_name} nella ttabella {tab_name}: {e}")
+        if conn:
+            conn.rollback()  # Annulla le modifiche in caso di errore
 
-#        finally:
-#           if conn:
-#               conn.close()
-
-#def model_all():
-#        try:
-#            conn = sqlite3.connect(DB_BASE_PATH)
-#            cursor = conn.cursor()
-#            # Prepara la query SQL per cercare un layer con lo stesso nome e configurazione
-#            query = '''SELECT model FROM models'''
-#            cursor.execute(query)
-#            layers = cursor.fetchall()
-            
-#            return layers
-
-#        except sqlite3.Error as e:
-#            print(f"Errore durante la verifica dell'esistenza del model: {e}")
-
-#        finally:
-#           if conn:
-#               conn.close()
-
-#def layer_exists(layer_config_json):
-#        print(layer_config_json)
-#        try:
-#            conn = sqlite3.connect(DB_BASE_PATH)
-#            cursor = conn.cursor()
-#            # Prepara la query SQL per cercare un layer con lo stesso nome e configurazione
-#            query = '''SELECT EXISTS(SELECT 1 FROM layers WHERE layer=?)'''
-#            cursor.execute(query, (str(layer_config_json)))
-#            exists = cursor.fetchone()[0]
-#            return exists == 1
-
-#        except sqlite3.Error as e:
-#            print(f"Errore durante la verifica dell'esistenza del layer: {e} : {exists}")
-
-#        finally:
-#           if conn:
-#               conn.close()
-
-
-
-
-#def push_Layers(dict_layer_list):
-#    # TDOD: manca la tabella relazionale models_layers
-#    try:
-#        conn = sqlite3.connect(DB_BASE_PATH)
-#        cursor = conn.cursor()
-#        cursor.execute('''
-#            CREATE TABLE IF NOT EXISTS layers (
-#                id INTEGER PRIMARY KEY AUTOINCREMENT,
-#                layer_name TEXT,
-#                layer TEXT
-#            )
-#        ''')
-
-#        layers = layer_all()
-#        xl_layer = []
-
-#        if xl_layer is not None:
-#            for lay in layers:
-#                xl_layer.append(lay[0])
-
-#        for dict_layer in dict_layer_list:
-
-#            if 'name' in  dict_layer:
-#                nome = dict_layer['name']
-#            else:
-#                nome = 'Non Nominato'
-
-#            json_layer = json.dumps(dict_layer)
-
-#            if not (xl_layer.__contains__(json_layer)):
-#                cursor.execute('''
-#                INSERT INTO layers (layer_name, layer)
-#                VALUES (?, ?)
-#            ''', (nome, json_layer))
-
-#                conn.commit()
-
-
-#    except sqlite3.Error as e:
-#        print(f"Errore del database: {e}")
-#        if conn:
-#            conn.rollback()  # Annulla le modifiche in caso di errore
-#    finally:
-#        if conn:
-#            conn.close()
-
-#def push_Model(dict_model, name):
-#    # TODO: manca un vincolo sul tipo di dati ___ Implementare metadati
-#    try:
-#        conn = sqlite3.connect(DB_BASE_PATH)
-#        cursor = conn.cursor()
-#        cursor.execute('''
-#            CREATE TABLE IF NOT EXISTS models (
-#                id INTEGER PRIMARY KEY AUTOINCREMENT,
-#                model_name TEXT,
-#                model TEXT
-#            )
-#        ''')
-
-#        models = model_all()
-#        xl_model = []
-
-#        if models is not None:
-#            for mod in models:
-#                xl_model.append(mod[0])
-
-#        json_model = json.dumps(dict_model)
-
-#        if not (xl_model.__contains__(json_model)):
-#            cursor.execute('''
-#            INSERT INTO models (model_name, model)
-#            VALUES (?, ?)
-#        ''', (name, json_model))
-
-#            conn.commit()
-
-
-#    except sqlite3.Error as e:
-#        print(f"Errore del database: {e}")
-#        if conn:
-#            conn.rollback()  # Annulla le modifiche in caso di errore
-#    finally:
-#        if conn:
-#            conn.close()
+    finally:
+        if conn:
+            conn.close()
