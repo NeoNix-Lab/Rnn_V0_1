@@ -8,34 +8,38 @@ from Models import Training_Model as tm
 import pandas as pd
 from st_aggrid import AgGrid as Ag, grid_options_builder
 from CustomDQNModel import Layers as l
+import time
 
 st.set_page_config(
     page_title='Home',
     page_icon=''
     )
 
+st.title('Iteration_Overview')
+#TODO: solo il training viene recuperato dal db se trova corrispondenza ma forse va bn cosi, forse serve anche al modeello
+
 #region Init_Method
-def build_df_from_objs(objs:list):
+#def build_df_from_objs(objs:list):
 
-    dicts = []
-    for i in objs:
-        dict_ = {attr: getattr(i, attr) for attr in dir(i) if not attr.startswith('__')}
-        dicts.append(dict_)
+#    dicts = []
+#    for i in objs:
+#        dict_ = {attr: getattr(i, attr) for attr in dir(i) if not attr.startswith('__')}
+#        dicts.append(dict_)
 
-    df = pd.DataFrame(dicts)
-    return df
+#    df = pd.DataFrame(dicts)
+#    return df
 
-def build_table(df:pd.DataFrame):
-    # Configurazione delle opzioni della griglia per abilitare la selezione di righe
-    gb = grid_options_builder.GridOptionsBuilder.from_dataframe(df)
-    gb.configure_selection('single', use_checkbox=True)  # Cambia 'multiple' in 'single' per la selezione singola
-    grid_options = gb.build()
-    grid_options['headerHeight'] = 50
-    grid_options['groupHeaderHeight'] = 75
+#def build_table(df:pd.DataFrame):
+#    # Configurazione delle opzioni della griglia per abilitare la selezione di righe
+#    gb = grid_options_builder.GridOptionsBuilder.from_dataframe(df)
+#    gb.configure_selection('single', use_checkbox=True)  # Cambia 'multiple' in 'single' per la selezione singola
+#    grid_options = gb.build()
+#    grid_options['headerHeight'] = 50
+#    grid_options['groupHeaderHeight'] = 75
     
-    # Visualizzazione del DataFrame con la griglia configurata
-    return Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
-                  enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True,)
+#    # Visualizzazione del DataFrame con la griglia configurata
+#    return Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
+#                  enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True,)
 #endregion
 
 t_iteration = dbm.retrive_all('training')
@@ -48,6 +52,12 @@ for i in t_iteration:
     obj_converted.append(obj)
     obj_converted_attr_dict.append(obj.attributi)
 
+st.write('pulire questo dict derivante dagli attr')
+
+st.write(obj_converted_attr_dict)
+st.write(type(obj_converted_attr_dict))
+
+
 df = pd.DataFrame(obj_converted_attr_dict)
 gb = grid_options_builder.GridOptionsBuilder.from_dataframe(df)
 gb.configure_selection('single', use_checkbox=True)
@@ -56,20 +66,35 @@ grid_options['headerHeight'] = 50
 grid_options['groupHeaderHeight'] = 75
 
 response = Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
-                  enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True,)
+                  enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True)
 
-if response.selected_rows_id[0] is not None:
-    id = int(response.selected_rows_id[0])
-    st.write(id)
-    st.write(obj_converted_attr_dict[id])
+st.write(obj_converted[0].name)
 
-    if st.button('Try_Buuild'):
-        process = dbm.retive_a_list_of_recordos('id','processes',[int(obj_converted[id].process_id)])
-        function_ =  dbm.retive_a_list_of_recordos('id','functions',[int(obj_converted[id].function_id)])
-        layers_ = dbm.retive_a_list_of_recordos('training_id','training_layers',[int(obj_converted[id].id)])
-        st.write(process)
-        st.write(function_)
-        st.write(layers_)
+if st.button('Add_New_Iteration'):
+    st.switch_page('pages/1Ui_function.py')
+    #TODO: momentaneamente sospesa la pulizia degli stati
+    #st.session_state.clear()
+
+# TODO: questa logica di selezione dell iterazione fa un po acqua da tutte le parti
+try:
+    if response.selected_rows_id is not None:
+        id = int(response.selected_rows_id[0])
+        st.write(id)
+        st.write(obj_converted_attr_dict[id])
+
+        if st.button('Try_Buuild'):
+            process = dbm.retive_a_list_of_recordos('id','processes',[int(obj_converted[id].process_id)])
+            function_ =  dbm.retive_a_list_of_recordos('id','functions',[int(obj_converted[id].function_id)])
+            layers_ = dbm.retive_a_list_of_recordos('training_id','training_layers',[int(obj_converted[id].id)])
+            st.write(process)
+            st.write(function_)
+            st.write(layers_)
+except :
+    if 'Training' in st.session_state:
+        st.write(st.session_state.Training.id)
+    else:
+        st.warning('No currently selected training')
+
 
 
 

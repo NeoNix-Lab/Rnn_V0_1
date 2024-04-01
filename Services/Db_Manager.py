@@ -3,6 +3,7 @@ import os
 import json
 from typing import List, Tuple, Union, Any
 
+# HACK: separare i metodi aiuterebbe la notifica degli errori
 # Db base path
 # TODO: probabilmente sara necessario aggiornare la path del db on Run
 DB_BASE_PATH = 'C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db'
@@ -24,13 +25,14 @@ def try_table_creation(tab_schema):
          if conn:
              conn.close()
 
-def change_db_path(path):
+def change_db_path(db_file_path):
     global DB_BASE_PATH
+    directory = os.path.dirname(db_file_path)
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    DB_BASE_PATH = path
+    DB_BASE_PATH = db_file_path
 
 def retrive_all(tab_name):
     try:
@@ -136,6 +138,8 @@ def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> Li
        if conn:
            conn.close()
 
+
+
 def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_index=None, tabb_name=None):
     """
     Inserisce qualsiasi lista di oggetti sulla base di una query ed uno schema , evita inserimenti multipli se unique_colum, unique colum e tabb name sono 
@@ -147,8 +151,10 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
         tab_name (str): Nome della tabella in cui cercare l'oggetto.
    
     """
-    # TODO: manca una verifica di esistenza su tutti gli elementi
+    # TODO: ritorno gli elementi esistenti ma senza un associazione , in caso di liste
+    
     try:
+        returned_objs = []
         conn = sqlite3.connect(DB_BASE_PATH)
         cursor = conn.cursor()
         cursor.execute(tab_schema)
@@ -160,22 +166,32 @@ def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_i
                 cursor.execute(check_query, check_values)
                 exists = cursor.fetchone()[0]
 
-                if not exists:
-                    cursor.execute(query, obj)
+                if exists == 0:
+                    try:
+                        cursor.execute(query, obj)
+                    except ValueError as e :
+                        raise(f'@@@@@@@@@@@@@@@@@[[[[[[[[[@{e}')
+                
+                check_query_ = f"SELECT * FROM {tabb_name} WHERE {unique_colum}=?"
+                check_values_ = (obj[unique_value_index],)
+                cursor.execute(check_query_, check_values_)
+                existing_obj = cursor.fetchone()
+                returned_objs.append(existing_obj)
 
             else :
                 cursor.execute(query, obj)
-
+            
         conn.commit()
+        
 
     except ValueError as e:
-        #print(f"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
         raise(f"Errore durante il push di : {e}")
 
         if conn:
             conn.rollback()  # Annulla le modifiche in caso di errore
 
     finally:
+        return returned_objs
         if conn:
             conn.close()
 
@@ -197,3 +213,46 @@ def retrive_last(tab_name, prop_name='id'):
     finally:
         if conn:
             conn.close()
+
+    def update_record(tabb_name, prop_name, prop_value, comparation_prop_name, comparation_prop_value):
+        try:
+            conn = sqlite3.connect(DB_BASE_PATH)
+            cursor = conn.cursor()
+
+            
+            check_query = f"UPDATE {tabb_name} SET {prop_name} = {prop_value} WHERE {comparation_prop_name} = {comparation_prop_value}"
+
+            cursor.execute(query)
+
+            conn.commit()
+
+        except ValueError as e:
+            raise(f"Errore durante il push di : {e}")
+
+            if conn:
+                conn.rollback()  
+
+        finally:
+            if conn:
+                conn.close()
+
+    def push_debugger(obj_list:list, tab_schema:str, query):
+         try:
+             conn = sqlite3.connect(DB_BASE_PATH)
+             cursor = conn.cursor()
+             cursor.execute(tab_schema)
+
+             for obj in obj_list:
+                     cursor.execute(query, obj)
+             conn.commit()
+
+         except ValueError as e:
+             #print(f"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
+             raise(f"Errore durante il push di : {e}")
+
+             if conn:
+                 conn.rollback()  # Annulla le modifiche in caso di errore
+
+         finally:
+             if conn:
+                 conn.close()

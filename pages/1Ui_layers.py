@@ -19,13 +19,9 @@ st.set_page_config(
     }
 )
 
-st.title('Reward_Functions')
-st.header('Set, Save or Load your RL Function')
+st.title('Layers')
 
 #region METHODS / INIT
-# TODO: definire lo schema di conversione db obj
-# TODO: definire lo schema di creazione dell ambinte
-# TODO: recuperare le forme dei layer dai dati o mantenre una lista fissa di layer?
 # HACK : sarebbe bello aveere un form piu user frendly per la costruzione del dizionario
 
 def build_forms(obj=None):
@@ -141,6 +137,7 @@ INPUT_LAYER_LIST = [lstm1_dict, lstm2_dict, dense1_dict, dense2_dict]
 if 'Obj_Function' not in st.session_state: # obj sarebbe reward_Function
     #TODO: Progettare un sistema dui navigazione efficace UX
     st.warning('Please Visit Function page navigation system not implemented yet')
+    st.switch_page('pages/1Ui_function.py')
 
     if st.button('costruisci e carica il modello'):
         if 'Modello' not  in st.session_state:
@@ -183,6 +180,7 @@ else:
                 for i in indexes:
                     st.session_state.Layers.append(lis[i])
 
+            st.switch_page('pages/Ui_Process.py')
 
 
     #endregion
@@ -194,7 +192,7 @@ else:
         build_forms()
 
     #region STRATI SALVATI
-    if 'Layers' in st.session_state:
+    if 'Layers' in st.session_state and modalita == 'Create':
         # TODO: inutile perche non modifica niente, aggiunge e basta, il metodo pensato per generare ui diventa difficele da gestire , sopratutto a livello di
         # risposta nei diversi casi 
         if st.sidebar.checkbox('Modifi_existing layer'):
@@ -218,12 +216,7 @@ else:
             # TODO: gli errori di db non raggiungono streamlit , NEpusha uno alla volta altrimenti va in errore
             for lay in st.session_state.Layers:
                 lay.push_layer()
-    #endregion
-    
 
+            st.switch_page('pages/Ui_Process.py')
     #endregion
-
-
-    #region COSTRUZIONE DEL MODELLO
     #endregion
-# TODO: passare tutto al modello tramite conversione e lasciare l ultima verifica al modello stesso

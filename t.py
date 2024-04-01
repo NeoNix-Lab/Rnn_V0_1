@@ -4,36 +4,18 @@ from Services import Db_Manager as db
 from CustomDQNModel import Layers as lay, layers_type as ty
 import CustomDQNModel as model
 from Models.Training_Model import Training_Model as training, Training_statu as status
+from Services import  st_utils as utils
+import pandas as pd
+import numpy as np
 
+#pro = pr('Test____')
 
-obj = db.retrive_all('layers')
-objs=[]
-for i in obj:
-    objs.append(lay.convert_db_response(i))
+##bp_p = 'C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V05.db'
+##db.change_db_path(bp_p)
 
-ultimo_elemento = objs.pop()
-objs.insert(0,ultimo_elemento)
+#pro.push_process()
 
-print(f'@@@@@@@@@@@@@@@@@@@@@@{len(objs)}')
-print(f'@@@@@@@@@@@@@@@@@@@@@@{type(objs[0])}')
+mio_dizionario = {'chiave1': 'valore1', 'chiave2': 'valore2', 'chiave3': 'valore3'}
+df = pd.DataFrame([mio_dizionario])
 
-
-_lay = []
-for i in objs:
-    _lay.append(i.layer)
-
-modello = model.CustomDQNModel(_lay,'Test_1')
-
-print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.model_layers}')
-
-modello.build_layers(33)
-print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.model_layers}')
-print(f'@@@@@@@@@@@@@@@@@@@@@@{modello.lay_obj}')
-
-#train = training('tra_name',status.PLANNED,0,0, 'dsfasd')
-#l=[1,1,1,1,1]
-#train.pusch_on_db(l,'Pusch from Ui_Env')
-
-#resoult = db.retive_a_list_of_recordos('id','process',[1])
-
-#print(resoult)
+print(df)

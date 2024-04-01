@@ -5,13 +5,12 @@ import tensorflow as tf
 from Services import Db_Manager as dbm
 
 class layers_type(Enum):
-
         INPUT = 'input'
         HIDDEN = 'hidden'
         OUTPUT = 'output'
 
+#region layers
 class Layers():
-
     DB_SCHEMA = '''CREATE TABLE IF NOT EXISTS layers (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               layer TEXT,
@@ -60,6 +59,7 @@ class Layers():
             print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
         else:
             print(f"L'attributo '{nome_attributo}' non esiste.")
+#endregion
 
 class CustomDQNModel(tf.keras.Model):
 
@@ -67,7 +67,7 @@ class CustomDQNModel(tf.keras.Model):
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               model TEXT,
               name TEXT,
-              note TEXT,
+              note TEXT
           );
           '''
 
@@ -77,47 +77,47 @@ class CustomDQNModel(tf.keras.Model):
     DB_RELATION_SCHEMA = '''CREATE TABLE IF NOT EXISTS model_layer_relation  (
               id_model INTEGER,
               id_layer INTEGER,
-              PRIMARY KEY (id_model, id_layer),
+              layer_index INTEGER,
+              PRIMARY KEY (id_model, layer_index) ON CONFLICT IGNORE
               FOREIGN KEY (id_model) REFERENCES models(id) ON DELETE CASCADE,
               FOREIGN KEY (id_layer) REFERENCES layers(id) ON DELETE CASCADE
               );
             '''
 
-    DB_RELATION_INSERT_QUERY = '''INSERT INTO model_layer_relation  (id_model, id_layer)
-           VALUES (?, ?);'''
+    DB_RELATION_INSERT_QUERY = '''INSERT INTO model_layer_relation  (id_model, id_layer, layer_index)
+           VALUES (?, ?, ?);'''
     
     # TODO creare i layers da lista oggetti
-    def __init__(self, lay_obj, name=None):
+    def __init__(self, lay_obj, input_shape, name, id='Not_Posted', push:bool = True):
         super().__init__(name=name)
-        self.schema_data = None
-        self.schema_input = None
-        self.schema_output = None
+        self.name = name
+        self.id = id
+        self.window_size = input_shape
         self.lay_obj = lay_obj
         self.model_layers = []
+        self.layers_id = []
+        self.set_up_layers(self.lay_obj)
+        self.push = push
 
-        # TODO : fixare la conversione da dizionario ad oggetto
-        #self.find_sschemas()
-
-    def build_layers(self, input_shape=None, notes='No Notes', layer_notes='no layer notes'):
-        print(self.lay_obj)
-        if input_shape is not None:
-            try:
-                #HINT: tento la sovrascrittura della shape per manggiare diversi windows_size
-                # TODO : definizione dei layer tramite dizionario e sovrascrittura della size troppo delicata
-                self.lay_obj[0]['params']['input_shape'][0] = input_shape
-            except ValueError as e :
-                raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
+    def build_layers(self, notes='No Notes'):
+        try:
+            for i in self.lay_obj:
+                if i.type == layers_type.INPUT:
+                    i.layer['params']['input_shape'][0] = self.window_size
+        except ValueError as e :
+            raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
 
         for layer_config in self.lay_obj:
-            layer_type = layer_config['type']
-            config = {key: value for key, value in layer_config['params'].items() if key != 'type'}
+            layer_type = layer_config.layer['type']
+            config = {key: value for key, value in layer_config.layer['params'].items() if key != 'type'}
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
                 self.model_layers.append(layer)
             except ValueError as e:
                 raise ValueError(f'Layer non Instanziato {e}')
-        # TODO : sospeso il pusch, inutile dei layer, rimandato pusch intero apost compilazione
-        self.push_on_db(notes=notes, layer_notes=layer_notes)
+
+        if self.push:
+            self.push_on_db(notes='Model_Compile')
 
     def call(self, inputs, training=None, mask=None):
         x = inputs
@@ -126,73 +126,19 @@ class CustomDQNModel(tf.keras.Model):
 
         return x
 
-    def print_attributo(self, nome_attributo):
-        # Utilizza getattr per ottenere il valore dell'attributo dal suo nome
-        if hasattr(self, nome_attributo):
-            valore = getattr(self, nome_attributo)
-            tipo = type(valore).__name__
-            print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
-        else:
-            print(f"L'attributo '{nome_attributo}' non esiste.")
+    def set_up_layers(self, list_of_layers):
+        self.layers_id = []
 
-    def find_sschemas(self):
+        for index, i in enumerate(list_of_layers):
+            if isinstance(i.id,str) and self.push:
+                i.push_layer()
+                record = dbm.retrive_last('layers', '*')
+                obj = Layers.convert_db_response(record)
+                list_of_layers[index] = obj
 
-        for lay in self.lay_obj:
-            if lay.type == layers_type.HIDDEN:
-                self.schema_data = lay.schema
+            self.layers_id.append(i.id)
 
-            if lay.type == layers_type.INPUT:
-                self.schema_input= lay.schema
-
-            if lay.type == layers_type.OUTPUT:
-                self.schema_output= lay.schema
-
-        self.chek_schemas()
-
-    def push_on_db(self, notes='No Notes', layer_notes='no layer notes'):
-
-        dbm.try_table_creation(self.DB_SCHEMA)
-
-        serializzati = self.serialize_to_json()[0]
-        print(serializzati)
-
-        exsist = dbm.exists_retrieve('model', serializzati,'models')
-        if not exsist[1]:
-
-            # Recupero le tulpe per l insereimento dei layer
-            obj_tulpe_list = [(self.serialize_to_json()[0], self.name, notes)]
-            dbm.push(obj_tulpe_list, self.DB_SCHEMA, self.INSERT_QUERY)
-
-            ser_lay = self.serialize_Layers_to_json()
-
-            # Devo puschare gòi oggetti copo verifica di corrispondenza 
-            if ser_lay.count != ser_lay.count:
-                raise ValueError('Uncorresponding N_ Layers')
-            
-            else:
-                for i in range(len(ser_lay)):
-                    self.lay_obj[i].layer = ser_lay[i]
-                    self.lay_obj[i].name = ser_lay[i].name
-                    self.lay_obj[i].push_layer()
-
-            # Recupero gli id inseriti per creare la tabella relazionale
-            ids = dbm.exists_retrieve('id', 'layer', 'layers', ser_lay)
-
-            # Carico il modello:
-            #TODO: Aggiungi i prametri di push necessaria ad evitare doppioni
-            mod_tulpa = [(self.serialize_to_json[0], self.serialize_to_json[1], notes)]
-            dbm.push(mod_tulpa, self.DB_SCHEMA, self.INSERT_QUERY)
-
-            mod_id = dbm.exists_retrieve('id', 'models', 'model', mod_tulpa[0][0])
-
-            # carico le relazioni
-            ids_tulpe = []
-            for id in ids:
-                ids_tulpe.append((mod_id[2], id[2]))
-
-            dbm.push(ids_tulpe, self.DB_RELATION_SCHEMA, self.DB_RELATION_INSERT_QUERY)
-
-    ############################## METODI DI SERIALIZZAZIONE #######################
+    #region METODI DI SERIALIZZAZIONE #######################
     # Serializzazione
     def serialize_Layers_to_json(self):
         serialized_l = []
@@ -245,9 +191,9 @@ class CustomDQNModel(tf.keras.Model):
             else:
                 raise ValueError('Unsupported Type Error, please provide dict or json lists()')
 
-    ######################### Metodi Ausiliari
-    #TODO: pusch degli oggetti layers
+    #endregion
 
+    #region Metodi Ausiliari
     # verifico la scrittura degli schemi:
     def chek_schemas(self):
         if self.schema_data == None or self.schema_output == None or self.schema_input == None:
@@ -284,8 +230,44 @@ class CustomDQNModel(tf.keras.Model):
     def save_weights_only(self, file_path):
         self.save_weights(file_path)
 
-# costruzione di dinamica del modello tramite i layer che verranno salvati a parete restituendo un dizionario
-# metodo astratto di serializzazione e deserializzazione 
-# il db verifichera eventuale ugualianza della lista di layer per evitare dupplicati
-# [id, description, [layers_list]]
-# eventuali sistemi di callback custom
+    def print_attributo(self, nome_attributo):
+       # Utilizza getattr per ottenere il valore dell'attributo dal suo nome
+       if hasattr(self, nome_attributo):
+           valore = getattr(self, nome_attributo)
+           tipo = type(valore).__name__
+           print(f'"nome atr:{nome_attributo} : valore: {valore} tipo:"{tipo}')
+       else:
+           print(f"L'attributo '{nome_attributo}' non esiste.")
+
+    def find_sschemas(self):
+
+        for lay in self.lay_obj:
+            if lay.type == layers_type.HIDDEN:
+                self.schema_data = lay.schema
+
+            if lay.type == layers_type.INPUT:
+                self.schema_input= lay.schema
+
+            if lay.type == layers_type.OUTPUT:
+                self.schema_output= lay.schema
+
+        self.chek_schemas()
+
+    def push_on_db(self, notes='No Notes'):
+        serializzati = self.serialize_to_json()[0]
+
+        # Recupero le tulpe per l insereimento dei layer
+        obj_tulpe_list = [(self.serialize_to_json()[0], self.name, notes)]
+        # HACK: attenzione il nome e il parametro di controllo dei duplicati, impedisce i push
+        dbm.push(obj_tulpe_list, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 1, 'models')
+
+        last_id = dbm.retrive_last('models', 'id')[0]
+        self.id = last_id
+        
+        ids_tulpe = []
+        for index, id in enumerate(self.layers_id):
+            ids_tulpe.append((last_id, id, index))
+
+        dbm.push(ids_tulpe, self.DB_RELATION_SCHEMA, self.DB_RELATION_INSERT_QUERY)
+    #endregion
+

@@ -38,6 +38,8 @@ def show_process_form():
         epochs = st.number_input("Epochs", value=1000, step=1)
         type_ = st.selectbox("Type", options=[e.value for e in prt])
         window_size = st.number_input("Window Size", value=20.0)
+        fees = st.number_input("Fees", value=0.01)
+        ini = st.number_input("Initial balance", value=100000)
         
         submitted = st.form_submit_button("Submit")
         
@@ -46,11 +48,14 @@ def show_process_form():
             _loos = prl(loss)
             _type = prt(type_)
 
-            print(_optimizer)
+            print(f'######################################## : {_optimizer}')
+            print(f'######################################## : {_type}')
+            print(f'######################################## : {_loos}')
+
             process = pr(name=name, notes=description, episodi=n_episode, epoche=epochs, 
                               epsilon_start=epsilon_start, epsilon_end=epsilon_end, epsilon_reduce=epsilon_reduce,
                               gamma=gamma, tau=tau, learning_rate=learning_rate, optimizer=_optimizer, 
-                              loss_functions=_loos, type_=_type, window_size=window_size)
+                              loss_functions=_loos, type_=_type, window_size=window_size, fees=fees, initial_balance=ini)
             if 'Process' not in st.session_state :
                 st.session_state.Process = process
             else:
@@ -72,11 +77,12 @@ def show_summary_in_sidebar(process):
     st.sidebar.text(f"Epoche: {process.epochs}")
     st.sidebar.text(f"Tipo: {process.type}")
     st.sidebar.text(f"Dimensione Finestra: {process.window_size}")
-
+    st.sidebar.text(f"Fees: {process.fees}")
+    st.sidebar.text(f"Initial BBalance: {process.initial_balance}")
 
 #endregion
 
-radio = st.radio('Build Retrive your process', options=['Build', 'Retrive'])
+radio = st.radio('Build Retrive your process', options=['Retrive', 'Build'])
 
 if radio == 'Build':
     show_process_form()
@@ -94,6 +100,8 @@ if radio == 'Retrive':
             st.session_state.Process = obj
         else:
             st.session_state.Process = obj
+
+        st.switch_page('pages/Ui_Env.py')
 #endregion
 
 #region Processo in memoria
@@ -105,25 +113,26 @@ if 'Process' in st.session_state and radio == 'Build':
 
     if st.button('Push_Process'):
         st.session_state.Process.push_process()
+        st.switch_page('pages/Ui_Env.py')
+
 #endregion
 
-if 'Process' in st.session_state:
-    st.write(len(st.session_state.Layers))
-    if st.button('Modello'):
-        try:
-            layer_S = []
-            for i in st.session_state.Layers:
-                layer_S.append(i.layer)
-            modello = mo(layer_S,'Test_1')
-            #TODO: momentaneamente evito la sovrascrittura dell input_shape
-            modello.build_layers()#input_shape=st.session_state.Process.window_size)
+#if 'Process' in st.session_state:
+#    if st.button('Modello'):
+#        try:
+#            layer_S = []
+#            for i in st.session_state.Layers:
+#                layer_S.append(i.layer)
+#            modello = mo(layer_S,'Test_1')
+#            #TODO: momentaneamente evito la sovrascrittura dell input_shape
+#            modello.build_layers()#input_shape=st.session_state.Process.window_size)
 
-            if 'Modello' not in st.session_state:
-                st.session_state.Modello = modello
-            else:
-                st.session_state.Modello = modello
+#            if 'Modello' not in st.session_state:
+#                st.session_state.Modello = modello
+#            else:
+#                st.session_state.Modello = modello
 
-        except ValueError as e:
-            st.warning(e)
+#        except ValueError as e:
+#            st.warning(e)
 
        

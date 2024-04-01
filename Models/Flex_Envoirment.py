@@ -14,7 +14,7 @@ class EnvFlex(gym.Env):
     def __init__(self, full_data:pd.DataFrame, reward_function: Callable, reward_colums:list[str], 
                  action_spaces_tab:pd.DataFrame, 
                  position_space_tab:pd.DataFrame,windows_size=20, fees=0.01, initial_balance = 100000, 
-                 first_reword=0,use_additional_reward_colum:bool = False,):
+                 first_reword=0,use_additional_reward_colum:bool = False):
         # Chiamata al init di gym.env
         super(EnvFlex, self).__init__()
 
