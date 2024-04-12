@@ -88,8 +88,8 @@ class CustomDQNModel(tf.keras.Model):
            VALUES (?, ?, ?);'''
     
     # TODO creare i layers da lista oggetti
-    def __init__(self, lay_obj, input_shape, name, id='Not_Posted', push:bool = True):
-        super().__init__(name=name)
+    def __init__(self, lay_obj, input_shape, name, id='Not_Posted', push:bool = True, **kwargs):
+        super(CustomDQNModel, self).__init__(name=name, **kwargs)
         self.name = name
         self.id = id
         self.window_size = input_shape
@@ -129,14 +129,38 @@ class CustomDQNModel(tf.keras.Model):
     def set_up_layers(self, list_of_layers):
         self.layers_id = []
 
-        for index, i in enumerate(list_of_layers):
-            if isinstance(i.id,str) and self.push:
-                i.push_layer()
-                record = dbm.retrive_last('layers', '*')
-                obj = Layers.convert_db_response(record)
-                list_of_layers[index] = obj
+        #TODO: ho escluso questo metodo quando viene creata la rete target perche... non ce la fa 
+        try:
+            for index, i in enumerate(list_of_layers):
+                if isinstance(i.id,str) and self.push:
+                    i.push_layer()
+                    record = dbm.retrive_last('layers', '*')
+                    obj = Layers.convert_db_response(record)
+                    list_of_layers[index] = obj
 
-            self.layers_id.append(i.id)
+                self.layers_id.append(i.id)
+        except :
+            pass
+        
+        #region metodi necessari per la serializazzione e deserializzazione della classe custom
+    def get_config(self):
+        config = super(CustomDQNModel, self).get_config()
+        config.update({
+            'input_shape': self.window_size,
+            'name': self.name,
+            'id': self.id,
+            'lay_obj': [(layer.get_config(), layer.__class__.__name__) for layer in self.model_layers],
+            'push': self.push
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        lay_obj_config = config.pop('lay_obj')
+        lay_obj = [getattr(tf.keras.layers, layer_name)(**layer_config) for layer_config, layer_name in lay_obj_config]
+        
+        return cls(lay_obj=lay_obj, **config)
+        #endregion
 
     #region METODI DI SERIALIZZAZIONE #######################
     # Serializzazione

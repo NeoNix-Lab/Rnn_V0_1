@@ -28,9 +28,13 @@
   <ItemGroup>
     <Compile Include="CustomDQNModel.py" />
     <Compile Include="Models\dati.py" />
+    <Compile Include="Models\Iteration.py" />
+    <Compile Include="Models\model_esecutor.py" />
+    <Compile Include="Models\DQL_v_0_2.py" />
     <Compile Include="Models\Process.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Models\ReplayBuffer.py" />
     <Compile Include="Models\Reward_Function.py" />
     <Compile Include="Models\Training_Model.py" />
     <Compile Include="Models\__init__.py">
@@ -44,6 +48,7 @@
     <Compile Include="pages\1Ui_layers.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pages\Ui_Training.py" />
     <Compile Include="pages\__init__.py" />
     <Compile Include="Services\Db_Manager.py" />
     <Compile Include="Models\Flex_Envoirment.py" />

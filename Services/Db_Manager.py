@@ -99,17 +99,17 @@ def exists_retrieve(prop_name, val_name, tab_name, obj_values) -> List[Tuple[str
 
 def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> List[any]:
 
-    """
-    Verifica l'esistenza di uno o piu oggetti nella tabella specificata e restituisce tutti i dettagli.
+    #"""
+    #Verifica l'esistenza di uno o piu oggetti nella tabella specificata e restituisce tutti i dettagli.
     
-    Args:
-        val_name (str): Nome della colonna chiave nella tabella per il confronto.
-        tab_name (str): Nome della tabella in cui cercare l'oggetto.
-        obj_values (List[any]]): Valore(i) dell'oggetto da cercare. Puo essere una stringa singola o una lista di stringhe.
+    #Args:
+    #    val_name (str): Nome della colonna chiave nella tabella per il confronto.
+    #    tab_name (str): Nome della tabella in cui cercare l'oggetto.
+    #    obj_values (List[any]]): Valore(i) dell'oggetto da cercare. Puo essere una stringa singola o una lista di stringhe.
     
-    Returns:
-        List[any]: Una lista di Any dove Rappresentanti la risposta alla ricerca di uno specifico oggetto
-    """
+    #Returns:
+    #    List[any]: Una lista di Any dove Rappresentanti la risposta alla ricerca di uno specifico oggetto
+    #"""
 
 
     conn = None
@@ -122,7 +122,7 @@ def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> Li
         
         results = []
         for obj_value in obj_values:
-            query = f'''SELECT * FROM {tab_name} WHERE {val_name}=?;'''
+            query = f'''SELECT * FROM {tab_name} WHERE {val_name}=?'''
             cursor.execute(query, (obj_value,))
             records = cursor.fetchall() 
             for record in records:
@@ -138,8 +138,7 @@ def retive_a_list_of_recordos(val_name:str, tab_name:str, obj_values:list) -> Li
        if conn:
            conn.close()
 
-
-
+# TODO: ho perso i rilanci delle eccezioni!!!!!!!!!!!!!!!!!!!
 def push(obj_list:list, tab_schema:str, query, unique_colum=None, unique_value_index=None, tabb_name=None):
     """
     Inserisce qualsiasi lista di oggetti sulla base di una query ed uno schema , evita inserimenti multipli se unique_colum, unique colum e tabb name sono 

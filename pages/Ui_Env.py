@@ -10,6 +10,7 @@ from pages.Ui_Process import show_summary_in_sidebar
 from Models.Process import Process as pr
 from Models.Training_Model import Training_Model as training, Training_statu as status
 import time
+from Services import st_utils as utils
 
 # TODO: il nome di questa ui dovra cambiare presto
 # TODO: i db log non raggiungono streamlit
@@ -32,26 +33,7 @@ if 'Obj_Function' in st.session_state :
          if st.sidebar.button('Clear_Data'):
              st.session_state.pop('Data')
 
-         colonne_df = set(st.session_state.Data.columns)
-         chiavi_dict = set(st.session_state.Obj_Function.data_schema.keys())
-
-         corrispondenza = colonne_df == chiavi_dict
-
-         if corrispondenza == False:
-            st.warning('Il set di dati non e compatibile con la funzione')
-            if st.button('Tenta di forzare la corrispondenza'):
-                new_dataframe = []
-                for i in colonne_df:
-                    if i in chiavi_dict:
-                        new_dataframe.append(i)
-                if chiavi_dict == set(new_dataframe):
-                    new = st.session_state.Data[new_dataframe]
-                    st.session_state.Data = new
-
-                    colonne_df = set(st.session_state.Data.columns)
-                    chiavi_dict = set(st.session_state.Obj_Function.data_schema.keys())
-
-                    corrispondenza = colonne_df == chiavi_dict
+         utils.Try_Force_Corrispondenza(st.session_state.Obj_Function)
 
          #region  Corrispondenza verificata Carica layers
          if 'Layers' in st.session_state:

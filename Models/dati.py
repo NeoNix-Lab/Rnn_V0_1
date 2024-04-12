@@ -2,119 +2,154 @@ from enum import Enum
 import pandas as pd
 import pandera as pa
 import json
-from Services import Db_Manager as dbm
-from io import StringIO
+from Services import Db_Manager as dbm, IchimokuDataRetriver as ichi
 
 
 class Dati():
-    class DatiVerifica(Enum):
-        #TODO: l ho rimosso perceh dava problemi
-        ASSENTI : -1
-        VERIFICATI : 1
-        NON_VERIFICATI: 0
+    #TODO: momentaneamente funziona con id di ichi
+    #TODO: momentaneamente la compressione delle colonne e rimandata solo a streamlit
 
-    #TODO: probabilmente schema text e inutile
     DB_SCHEMA = '''CREATE TABLE IF NOT EXISTS dati (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                name TEXT,
-               data_schema_txt TEXT,
-               notes TEXT
+               train_data REAL,
+               work_data REAL,
+               test_data REAL,
+               decrease_data REAL,
+               db_references TEXT,
+               colonne TEXT
            );
            '''
 
-    INSERT_QUERY = '''INSERT INTO dati (name, data_schema_txt, notes)
-          VALUES (?, ?, ?);'''
-
-    def __init__(self, data:pd.DataFrame=None, name='Not_Named', notes='No_Notes', id='Not_Posted_Yet'):
+    INSERT_QUERY = '''INSERT INTO dati (name, train_data, work_data, test_data, decrease_data, db_references, colonne)
+          VALUES (?, ?, ?, ?, ?, ?, ?);'''
+    
+# TODO: riordinare il set_data e la gestione dati e percentuali di dati
+    def __init__(self, db_reference, df_or_colonne, train_data=0.5, work_data=0, test_data=0.5,  decrease_data=0, name='Not_Named', id='Not_Posted_Yet'):
         self.id = id
         self.name = name
-        self.data_schema = None
-        self.data_schema_txt = None
-        self._dati = data
-        self.build_schema(self._dati)
-        self.pusch_on_db(f'Nuovi dati {self.name}')
-        self.verifica = self.verify_data()
-
-    def update_dati(self, new_data:pd.DataFrame):
-        self._dati = new_data
-        res = self.verify_data()
-        self.verifica = res
-        return res
-
-    
-    def build_schema(self, dati:pd.DataFrame):
+        self.train_data = train_data
+        self.work_data = work_data
+        self.test_data = test_data
+        self.decrease_data = decrease_data
+        self.db_references = db_reference
+        self.df_or_colonne = self.serializza_colonne(df_or_colonne)
         try:
-            if dati is not None:
-                self.data_schema = pa.infer_schema(dati)
-                self.data_schema_txt = self.data_schema.to_json()
-        except ValueError as e:
-            raise e
-    
-    def verify_data(self):
-        if self._dati is None:
-                return 'assenti'
-        else:
-            try:
-                self.data_schema.validate(self._dati)
-                return 'verificati'
-            except ValueError as e :
-                raise(f'Errore nella verifica dei dati : {e}')
-                return 'non_verificati'
+            df = ichi.fetch_data_from_detailId(self.db_references)
+            self.data = self.riduci_df_alle_colonne(df)
+        except ValueError as e :
+            raise(f'Errore nel recupero dei dati : {e}')
+        self.train_data_ = None
+        self.work_data_ = None
+        self.test_data_ = None
+        try:
+            self.set_data(train_data,work_data,test_data, decrease_data)
+        except  ValueError as e:
+            raise(e)
+        #self.attributi = self.__dict__.copy()
 
-    def pusch_on_db(self, notes='No Notes'):
-        dumped_data_schema = str(self.data_schema)
-        data_tulpe = [(self.name, dumped_data_schema, notes),]#str(self.data_schema_txt)
-        dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'data_schema_txt', 1, 'dati')
+
+    def pusch_on_db(self):
+        #HACK: anche questo viene verificato secondo il nome
+        try:
+            data_tulpe = [(self.name, self.train_data, self.work_data, self.test_data, self.decrease_data, self.db_references, self.df_or_colonne),]
+            dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 0, 'dati')
+        except ValueError as e:
+            raise(e)
+       
 
     @staticmethod
     def convert_db_response(obj):
         try:
-            #dese_sch = json.loads(obj[2])
-            resoult = Dati(id=obj[0], name=obj[1], notes=obj[3])
-            #resoult.data_schema_txt = dese_sch
-
-            # Utilizza StringIO per creare un oggetto file-like dalla stringa JSON
-            json_like_file = StringIO(obj[2])
-
-            resoult.data_schema = pa.DataFrameSchema.from_json(json_like_file)
+            df_or = obj[7]
+            resoult = Dati(id=obj[0], name=obj[1], df_or_colonne=df_or, train_data=obj[2], work_data=obj[3], test_data=obj[4], 
+                           decrease_data=obj[5], db_reference=obj[6])
 
             return resoult
 
         except ValueError as e :
-            raise ValueError(f'Errore nella conversione di una funzione da db ad obj_Dati ERROR: {e}')
-     
-    @staticmethod
-    def retrive_all_from_db():
-        response = dbm.retrive_all('dati')
-        lis=[]
+            pass
+            #raise ValueError(f'Errore nella conversione di una funzione da db ad obj_Dati ERROR: {e}')
 
-        for res in response:
-            obj = Dati.convert_db_response(res)
-            lis.append(obj)
+    def set_data(self,train_data, work_data, test_data, decrease_data):
+       #verifico la coerenza dei parametri
+       for param in (train_data, work_data, test_data, decrease_data):
+           if not 0.0000 <= param <= 0.999:
+               raise ValueError(f"Il parametro {param} deve essere compreso tra 0.001 e 0.999")
 
-        return lis
+       lunghezza_dataset = len(self.data)
 
-    @staticmethod
-    def retrive_list_by_schema(schema_txt):
-        response = dbm.retive_a_list_of_recordos('data_schema_txt', 'dati', schema_txt)
-        lis = []
-        for r in response:
-            obj = Dati.convert_db_response(r)
-            lis.append(obj)
+       if decrease_data!= 0:
+           lenght = int(lunghezza_dataset*decrease_data)
+           self.data = self.data[:lenght]
 
-        return lis
+       if train_data+work_data+test_data > 1:
+           lunghezza_dataset = len(self.data)
+           trainlen = int(lunghezza_dataset*train_data)
+           work_data = int(lunghezza_dataset*work_data)
+           train_data_ = self.data[:trainlen]
+           work_data_ = self.data[trainlen:trainlen+work_data]
+           test_data_ = self.data[trainlen+work_data:]
+       else:
+           lunghezza_dataset = len(self.data)
+           trainlen = int(lunghezza_dataset*train_data)
+           work_data = int(lunghezza_dataset*work_data)
+           test_data = int(lunghezza_dataset*test_data)
+           self.train_data_ = self.data[:trainlen]
+           self.work_data_ = self.data[trainlen:trainlen+work_data]
+           self.test_data_ = self.data[trainlen+work_data:trainlen+work_data+test_data]
 
+    def serializza_colonne(self,df_or_colonne):
+        """
+        Serializza una lista di colonne di un DataFrame pandas in un JSON.
+        Accetta un DataFrame pandas o una lista di stringhe (nomi delle colonne).
+        
+        Returns:
+        - str: Stringa JSON contenente le colonne serializzate.
+        """
+        # Se df_or_colonne è un DataFrame, estrai i nomi delle colonne
+        if isinstance(df_or_colonne, pd.DataFrame):
+            colonne = df_or_colonne.columns.tolist()
+        elif isinstance(df_or_colonne, list) and all(isinstance(item, str) for item in df_or_colonne):
+            colonne = df_or_colonne
 
-    # TODO: costruire lo schema relazionale dati da a f, e valida dati in ingresso per env
-    # f genera due schemi da passare al modello che  verranno validati con un tentativo d'iterazione 
-    # modello genera l ambiente dopo aver usato il suo schema per validare i dati in ingresso e dop aver passato 
-    # il numero di timesteps utilizzato per costruire gli strati 
+        else:
+            try:
+                colonne = json.loads (df_or_colonne)
+            except ValueError as e:
+                raise e
+            
+        colonne_json = json.dumps(colonne)
+        print(colonne_json)
 
-    # HACK: implementare per recuperare e o validare dati da diverse fonti e diversi fomati db string pd.dataframe
-    def validate_data(self, data:pd.DataFrame):
+        
+        return colonne_json
+
+    def riduci_df_alle_colonne(self, data):
+        """
+        Riduce un DataFrame di pandas alle sole colonne specificate in una lista fornita come stringa JSON.
+        
+        Returns:
+        - pd.DataFrame: DataFrame ridotto contenente solo le colonne specificate.
+        """
         try:
-            return self.data_schema.validate(data)
-        except ValueError as e:
-            raise ValueError(f'Errore nella validazione : {e}')
+            # Deserializza la stringa JSON per ottenere la lista delle colonne
+            colonne = json.loads(self.df_or_colonne)
+            
+            # Verifica che l'input JSON sia una lista
+            if not isinstance(colonne, list):
+                raise ValueError("L'input JSON deve rappresentare una lista di nomi di colonne.")
+            
+            # Riduci il DataFrame alle colonne specificate, ignorando quelle non presenti
+            colonne_presenti = [col for col in colonne if col in data.columns]
+            df_ridotto = data[colonne_presenti]
+            
+            return df_ridotto
+        except json.JSONDecodeError:
+            raise ValueError("La stringa fornita non e un JSON valido.")
+
+
+    
+  
 
 

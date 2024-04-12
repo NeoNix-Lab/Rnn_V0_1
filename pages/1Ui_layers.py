@@ -134,6 +134,7 @@ dense2_dict = {
 }
 
 INPUT_LAYER_LIST = [lstm1_dict, lstm2_dict, dense1_dict, dense2_dict]
+
 if 'Obj_Function' not in st.session_state: # obj sarebbe reward_Function
     #TODO: Progettare un sistema dui navigazione efficace UX
     st.warning('Please Visit Function page navigation system not implemented yet')
@@ -148,7 +149,7 @@ if 'Obj_Function' not in st.session_state: # obj sarebbe reward_Function
 #endregion
 
 else:
-    modalita = st.radio('Modalita Di Recupero Strati', options=['Create', 'Load'])
+    modalita = st.radio('Modalita Di Recupero Strati', options=['Load', 'Create'])
     #region RECUPERARE STRATI
     if modalita == 'Load':
         st.subheader('Load your layers')

@@ -6,6 +6,7 @@ from streamlit_ace import st_ace
 from Models.Reward_Function import Rewar_Function as Rw
 from Models.Flex_Envoirment import EnvFlex as env
 import pandera as pdr
+from Services import st_utils as utils
 
 
 #region UTILS / BASELINE
@@ -112,32 +113,34 @@ st.title('Functions')
 
  #region DATA aggiungo una sezione per il recupero dei dati
 
-set_dati = ichi.fetch_details() 
-lis_dati = set_dati['Id']
+#set_dati = ichi.fetch_details() 
+#lis_dati = set_dati['Id']
 
-sel = st.selectbox('Select your set', lis_dati)
-data = ichi.fetch_data_from_detailId(sel)
+#sel = st.selectbox('Select your set', lis_dati)
+#data = ichi.fetch_data_from_detailId(sel)
 
-if 'Data' not in st.session_state:
-        st.write(data)
+#if 'Data' not in st.session_state:
+#        st.write(data)
 
-if st.button('Select_Your_Data'):
-    st.session_state['Data'] = data
+#if st.button('Select_Your_Data'):
+#    st.session_state['Data'] = data
 
-if 'Data' in st.session_state:
+#if 'Data' in st.session_state:
 
-    if st.sidebar.checkbox('Display _data'):
-         st.write(st.session_state.Data.head(5))
-         remover = st.multiselect('Remove Columns', st.session_state.Data.columns)
-         remove = st.button('Save new D_Frame')
-         if remove:
-             new_data = st.session_state.Data.drop(columns=remover)
+#    if st.sidebar.checkbox('Display _data'):
+#         st.write(st.session_state.Data.head(5))
+#         remover = st.multiselect('Remove Columns', st.session_state.Data.columns)
+#         remove = st.button('Save new D_Frame')
+#         if remove:
+#             new_data = st.session_state.Data.drop(columns=remover)
 
-             st.session_state.Data = new_data
+#             st.session_state.Data = new_data
 
-    if st.sidebar.button('Clear_Data'):
-        st.session_state.pop('Data')
+#    if st.sidebar.button('Clear_Data'):
+#        st.session_state.pop('Data')
+utils.Load_Data()
 #endregion 
+if 'Data' in st.session_state:
 
     build_btn = st.radio('Select Mode', ['Load', 'Create'], key='Load_Create')
     
