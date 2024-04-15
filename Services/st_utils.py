@@ -1,3 +1,4 @@
+from typing import Callable
 from Models.Training_Model import Training_Model as tr_mod
 from Services import Db_Manager as db
 from Models import Process as pr, Reward_Function as rw, Flex_Envoirment as flex
@@ -35,8 +36,10 @@ def build_training_from_tr_record(record):
         function_ = db.retive_a_list_of_recordos('id', 'functions', train.function_id)
         _function = rw.Rewar_Function.convert_db_response(function_[0])
         _model = build_static_model_from_id(train.model_id, _process.window_size)
+        # HACK: creo qui un istanza di target modedl perche main model e inclonabile molto probabilmente pere iun impossibilita di copiare i layers
+        _target_model = build_static_model_from_id(train.model_id, _process.window_size)
 
-        return _function, _process, _model, train
+        return _function, _process, _model, train, _target_model
         
     except ValueError as e :
         raise(f'errore nella costruzione del processo completo dal record del training : ################################{e}')
@@ -71,7 +74,7 @@ def build_static_model_from_id(id:int, input_shape:int):
     except ValueError as e:
         raise(f'errore nella costruzione del modello statico dal id : ################################{e}')
 
-def build_and_test_envoirment(data:pd.DataFrame, function:rw.Rewar_Function, process:pr.Process, test_action:int=1):
+def build_and_test_envoirment(data:pd.DataFrame, function:rw.Rewar_Function, process:pr.Process, test_action:int=1, test_function:Callable=None):
     action_space = list(pd.DataFrame([function.action_schema]).columns)
     position_space = list(pd.DataFrame([function.status_schema]).columns)
 
@@ -80,11 +83,15 @@ def build_and_test_envoirment(data:pd.DataFrame, function:rw.Rewar_Function, pro
     #HINT: per rendere accessibili a livello globale funzioni stringate e necessario recuperarle e reindirizzarle
     globals()["flex_buy_andSell"] = locals()['flex_buy_andSell']
     globals()["fillTab"] = locals()['fillTab']
+    globals()['premia'] = locals()['premia']
 
+    if test_function == None:
+        env = flex.EnvFlex(data,globals()['premia'],[],action_space,position_space,int(process.window_size),process.fees,process.initial_balance)
+    else:
+        env = flex.EnvFlex(data,test_function,[],action_space,position_space,int(process.window_size),process.fees,process.initial_balance)
 
-    env = flex.EnvFlex(data,locals()['premia'],[],action_space,position_space,int(process.window_size),process.fees,process.initial_balance)
-
-    env.step(test_action)
+    s = env.step(test_action)
+    print(f'[[[[[[[[[[[[[[[{s[0].head(30)}]]]]]]]]]]]]]]]')
 
     return env, env.Obseravtion_DataFrame
 
@@ -174,7 +181,7 @@ def show_list_of_dataset():
     set_dati = ichi.fetch_details()
     lis_dati = set_dati['Id']
     
-    sel = st.selectbox('Select your set', lis_dati)
+    sel = st.selectbox('Select your set', lis_dati, index=2)
     return ichi.fetch_data_from_detailId(sel), sel
 
 def Load_Data():

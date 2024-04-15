@@ -19,6 +19,7 @@ LOG_PATH = 'log fittizzia di base'
 st.title('Iteration')
 LOG_PATH = st.text_input('Insert_your_log_path', value=LOG_PATH)
 #region Recupero della logica 
+st.write(st.session_state.Obj_Function.funaction)
 if 'Obj_Function' in st.session_state :
      #region data
      if 'Data' in st.session_state:

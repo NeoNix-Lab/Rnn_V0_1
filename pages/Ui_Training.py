@@ -8,7 +8,9 @@ from Services import IchimokuDataRetriver as ichi
 import json
 from Services import st_utils as utils
 import pandas as pd
-from Models import dati, Iteration as iteration, DQL_v_0_2 as model
+from Models import dati, Iteration as iteration
+from Models import Mod_esecutor as model
+import numpy as np
 
 st.set_page_config(
     page_title="trainer",
@@ -27,7 +29,7 @@ st.title('Train')
 if 'Selected_Iteration' not in st.session_state:
     st.switch_page('Ui_Exe.py')
 iter = st.session_state['Selected_Iteration']
-function, process, model_, _train = utils.build_training_from_tr_record(iter)
+function, process, model_, _train, _target_model = utils.build_training_from_tr_record(iter)
 
 train_or_test = st.select_slider('Train or Test', ['New_Train','Test_Exisisting_model'],label_visibility='collapsed')
 
@@ -64,9 +66,9 @@ if train_or_test == 'New_Train':
                 st.session_state.Iter = iteration.Iterazione.convert_db_response(iter[0])
     
             if 'Env' not in st.session_state:
-                st.session_state.Env = env, test_env = utils.build_and_test_envoirment(st.session_state.Data, function, process)
+                st.session_state.Env = env, test_env = utils.build_and_test_envoirment(st.session_state.Data[0:100], function, process)
             else :
-                st.session_state.Env = env, test_env = utils.build_and_test_envoirment(st.session_state.Data, function, process)
+                st.session_state.Env = env, test_env = utils.build_and_test_envoirment(st.session_state.Data[0:100], function, process)
 
             st.experimental_rerun()
 
@@ -76,7 +78,19 @@ if train_or_test == 'New_Train':
 
         if st.button('Start_Training'):
             #TODO: correggere questa necessita di costruire i layers ogni volta
+            #TODO: e soprattutto di doverlo fasre per due reti
+
             model_.build_layers('Pre_Training')
+            _target_model.build_layers('Pre_Training')
+
+            #st.write(model_.model_layers)
+            #st.write(type(model_.model_layers[0]))
+
+            #[st.write(l.layer) for l in model_.lay_obj]
+            #st.write(len(model_.lay_obj))
+           
+
+
 
             EPSILON_START = process.epsilo_start
             EPSILON_END = process.epsilon_end
@@ -85,14 +99,28 @@ if train_or_test == 'New_Train':
             TAU = process.tau
             EPOCHE = process.epochs
             #TODO: manca la replay capacity
+            _mod = model.Trainer(st.session_state.Env[0],  model_, _target_model , EPSILON_START,EPSILON_END,EPSILON_REDUCE, GAMMA, TAU, epoche=EPOCHE)
 
-            _mod = model.Trainer(st.session_state.Env[0],model_ ,EPSILON_START,EPSILON_END,EPSILON_REDUCE, GAMMA, TAU, epoche=EPOCHE)
+            #region Debugging
+            #collected_tensors = []
+            #for _ in range(2):
+            #    step = st.session_state.Env[0].step(1)
+            #    x = _mod.estrapola_tensore(step[0], step[1], step[2])
+            #    collected_tensors.append(x[0])
+            
+            #batched_input = np.stack([collected_tensors[0],collected_tensors[1]])
+            #y = model_.predict(batched_input)
+            #st.write(y)
+            #endregion
+
+
             # TODO: manca la selezione delle metriche 
             # TODO: verificare che i dati dell ambiente siano corretti perche passano da li
             # TODO: per ora non viene gestita la parte di log
             # TODO: manca il batch_size
-            _mod.compile_networks(process.optimizer, process.loss, metrics=['accuracy', 'precision', 'recall'])
+            _mod.compile_networks(process.optimizer, process.loss, metrics=['accuracy'])
             _mod.Train(process.n_episode, process.type,'batch')
+            st.write(f'Last Current Balance : {str(st.session_state.Env[0].current_balance)}')
 
 
         if st.sidebar.button('clear env'):

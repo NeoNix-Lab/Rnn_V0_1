@@ -28,9 +28,10 @@
   <ItemGroup>
     <Compile Include="CustomDQNModel.py" />
     <Compile Include="Models\dati.py" />
+    <Compile Include="Models\Mod_esecutor.py" />
     <Compile Include="Models\Iteration.py" />
-    <Compile Include="Models\model_esecutor.py" />
-    <Compile Include="Models\DQL_v_0_2.py" />
+    <Compile Include="Deprecated\model_esecutor.py" />
+    <Compile Include="Deprecated\DQL_v_0_2_deprecated.py" />
     <Compile Include="Models\Process.py">
       <SubType>Code</SubType>
     </Compile>
@@ -40,6 +41,7 @@
     <Compile Include="Models\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="pages\test_st.py" />
     <Compile Include="pages\Ui_Env.py" />
     <Compile Include="pages\1Ui_function.py" />
     <Compile Include="pages\Ui_Process.py">
@@ -64,12 +66,18 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
+    <Folder Include="Deprecated\" />
+    <Folder Include="Docs\" />
     <Folder Include="pages\" />
     <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Base_roadmap.txt" />
-    <Content Include="Risorse_Esterne.txt" />
+    <Content Include="Docs\Base_roadmap.txt" />
+    <Content Include="Docs\Full_Process.md" />
+    <Content Include="Docs\incompatibilita_di_forma.md" />
+    <Content Include="Docs\Risorse_Esterne.txt" />
+    <Content Include="Docs\schemafit.md" />
+    <Content Include="Docs\Updating_schema.md" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|VisualStudio|enn_tre" />

@@ -85,7 +85,8 @@ class EnvFlex(gym.Env):
         return dic, selected_array, selected_name, np.argmax(selected_array)
         
     def reset(self) :
-        
+        self.Obseravtion_DataFrame = None
+        self.set_DF_Obs()
         #HINT: steps for Windows_size
         self.current_step = 0
         self.done = False
@@ -118,8 +119,8 @@ class EnvFlex(gym.Env):
             return
 
         # TODO: Autoconversione di action 
-        print(self.current_step)
-        print(len(self.data.index)-1)
+        print(f'@@@@@@@@@@@@ current env _step{self.current_step}')
+        print(f'@@@@@@@@@@@@ env len(self.data.index)-1{len(self.data.index)-1}')
 
         if self.current_step == len(self.data.index)-1:
             self.done = True
@@ -131,7 +132,7 @@ class EnvFlex(gym.Env):
 
         _, pos_array, poss_name, poss_index = self.Endcode(self.position_tab, self.last_position_status)
 
-        print(poss_name)
+        print(f'@@@@@@@@@@@@ current env poss_name {poss_name}')
 
 
         if self.done:
@@ -150,6 +151,8 @@ class EnvFlex(gym.Env):
         self.updatewind()
 
         self.reward_function(self,action)
+        print(f'@@@@@@@@@@@@ env reward {self.last_Reward}')
+
 
         self.current_step = self.current_step+1
 
