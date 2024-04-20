@@ -213,45 +213,88 @@ def retrive_last(tab_name, prop_name='id'):
         if conn:
             conn.close()
 
-    def update_record(tabb_name, prop_name, prop_value, comparation_prop_name, comparation_prop_value):
-        try:
-            conn = sqlite3.connect(DB_BASE_PATH)
-            cursor = conn.cursor()
+#def update_record(tabb_name, prop_name, prop_value, comparation_prop_name, comparation_prop_value):
+#    try:
+#        conn = sqlite3.connect(DB_BASE_PATH)
+#        cursor = conn.cursor()
 
-            
-            check_query = f"UPDATE {tabb_name} SET {prop_name} = {prop_value} WHERE {comparation_prop_name} = {comparation_prop_value}"
+        
+#        check_query = f"UPDATE {tabb_name} SET {prop_name} = {prop_value} WHERE {comparation_prop_name} = {comparation_prop_value}"
 
-            cursor.execute(query)
+#        cursor.execute(query)
 
-            conn.commit()
+#        conn.commit()
 
-        except ValueError as e:
-            raise(f"Errore durante il push di : {e}")
+#    except ValueError as e:
+#        raise(f"Errore durante il push di : {e}")
 
-            if conn:
-                conn.rollback()  
+#        if conn:
+#            conn.rollback()  
 
-        finally:
-            if conn:
-                conn.close()
+#    finally:
+#        if conn:
+#            conn.close()
 
-    def push_debugger(obj_list:list, tab_schema:str, query):
-         try:
-             conn = sqlite3.connect(DB_BASE_PATH)
-             cursor = conn.cursor()
-             cursor.execute(tab_schema)
+def push_debugger(obj_list:list, tab_schema:str, query):
+     try:
+         conn = sqlite3.connect(DB_BASE_PATH)
+         cursor = conn.cursor()
+         cursor.execute(tab_schema)
 
-             for obj in obj_list:
-                     cursor.execute(query, obj)
-             conn.commit()
+         for obj in obj_list:
+                 cursor.execute(query, obj)
+         conn.commit()
 
-         except ValueError as e:
-             #print(f"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
-             raise(f"Errore durante il push di : {e}")
+     except ValueError as e:
+         #print(f"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Errore durante il push di {obj_list} sull oggetto {obj} in {query}: {e}")
+         raise(f"Errore durante il push di : {e}")
 
-             if conn:
-                 conn.rollback()  # Annulla le modifiche in caso di errore
+         if conn:
+             conn.rollback()  # Annulla le modifiche in caso di errore
 
-         finally:
-             if conn:
-                 conn.close()
+     finally:
+         if conn:
+             conn.close()
+
+def new_update_record(table_name: str, updates: dict, conditions: dict):
+    """
+    Aggiorna i record specificati in una tabella.
+
+    Args:
+    table_name (str): Nome della tabella in cui aggiornare il record.
+    updates (dict): Dizionario delle colonne e dei nuovi valori da aggiornare.
+    conditions (dict): Dizionario delle condizioni da rispettare per l'aggiornamento (WHERE clause).
+
+    Returns:
+    None: Aggiorna i record nel database e gestisce le eccezioni internamente.
+    """
+    # HINT: Esempio di utilizzo:
+    # update_record('nome_tabella', {'colonna_da_aggiornare': 'nuovo_valore'}, {'colonna_condizione': 'valore_condizione'})
+    try:
+        conn = sqlite3.connect(DB_BASE_PATH)
+        cursor = conn.cursor()
+
+        # Preparazione della query di aggiornamento
+        update_clause = ', '.join([f"{key} = ?" for key in updates.keys()])
+        condition_clause = ' AND '.join([f"{key} = ?" for key in conditions.keys()])
+        query = f"UPDATE {table_name} SET {update_clause} WHERE {condition_clause}"
+
+        # Preparazione dei valori per la query
+        update_values = list(updates.values())
+        condition_values = list(conditions.values())
+        query_values = update_values + condition_values
+
+        # Esecuzione della query
+        cursor.execute(query, query_values)
+        conn.commit()
+
+    except sqlite3.Error as e:
+        print(f"Errore durante l'aggiornamento del record in {table_name}: {e}")
+        if conn:
+            conn.rollback()  # Annulla le modifiche in caso di errore
+
+    finally:
+        if conn:
+            conn.close()
+
+

@@ -26,7 +26,7 @@ import streamlit as st
 # gamma e il fattore di sconto futuro
 
 class Trainer():
-    def __init__(self, env:envoirment, network:model, target_network:model,  epsilon_start, epsilon_end, epsilon_reduce, gamma, tau, epoche=1, replay_cap = 30000):
+    def __init__(self, env:envoirment, network:model,  epsilon_start, epsilon_end, epsilon_reduce, gamma, tau, training_name:str, epoche=1, replay_cap = 30000):
         self.replayer = ReplayBuffer(replay_cap)
         self.epsilon = epsilon_start
         self.epochs = epoche
@@ -35,7 +35,7 @@ class Trainer():
         self.epsilon_reduce = epsilon_reduce
         self.env = env
         self.main_network = network
-        self.target_network = target_network
+        self.target_network = None
         self.gamma = gamma
         self.tau = tau
         self.learning_rate = 0
@@ -60,6 +60,9 @@ class Trainer():
                         'kullback_leibler_divergence'
                     ]
         self.ep_report = list()
+        self.action_report = None
+        self.action_report_for_episode = []
+        self.action_count = 0
 
         # Additional metrics
         self.episode = 0
@@ -68,7 +71,8 @@ class Trainer():
         # HACK tento l'aggiunta di un callback >>>>>>>>>> spostata alla fine della compilazione della rete per avere il nome del modello
         timestamp = time.time()
         self.date_str = time.strftime('%d_%H_%M_%S', time.localtime(timestamp))
-        self.path_2 = f'logs/dqn/{self.date_str}/'
+        self.path = f'logs/{training_name}'
+        self.path_2 = f'{self.path}/{self.date_str}/'
         self.writer = tf.summary.create_file_writer(self.path_2+'env_metrics')
         self.writer_tabulari = tf.summary.create_file_writer(self.path_2+'tabulari')
     
@@ -145,22 +149,30 @@ class Trainer():
     # Using Policy Decision
     def epsylon_greedy_policy(self, state, model):
         n_action = self.env.coutnaction()
+        self.action_count+=1
 
         if np.random.rand() < self.epsilon:
             print(f'################################## Action Randomly Selected ########################')
+            self.action_report['selection'][self.env.current_step] = 'random'
+            
+
             x = np.random.randint(n_action)
             azione_one_hot = np.zeros(n_action)
             azione_one_hot[x] = 1
             return azione_one_hot
         else:
             print(f'################################## Action Model Selected ########################')
+            self.action_report['selection'][self.env.current_step] = 'model'
+
             Q_values = model.predict(state, verbose=2)
             x = np.argmax(Q_values[0])
             azione_one_hot = np.zeros(n_action)
             azione_one_hot[x] = 1
+
+            self.action_report['action'][self.env.current_step] = np.argmax(azione_one_hot)
             return azione_one_hot
 
-    def Train(self, n_episodi, mode, batch_size, logpath=0):
+    def Train(self, n_episodi, mode, batch_size):
        self.ep_report.clear()
 
        if mode != 'batch' and mode != 'step' and mode != 'serie':
@@ -177,6 +189,7 @@ class Trainer():
 
        for episodio in range(n_episodi):
            print(f'##################################    New Episode: {episodio}  ########################')
+           self.action_report = pd.DataFrame(data=np.zeros((len(self.env.data),2)),columns=['action','selection'])
 
            self.episode = episodio
            #HACK: non sto mai pulendo la queque
@@ -233,15 +246,12 @@ class Trainer():
                         self.Aggiornamento_Main(*batch)
                
                _done = terminato_t
-            #region logs TODO:
-       #    # Psot same logd on 'logs/dqn'
-       #    self.post_logs(self.writer, self.env.Obseravtion_DataFrame, f'{episodio}')
 
-       #    self.ep_report.append(self.env.Obseravtion_DataFrame)
-
-       ## Creo la log tab per l addestramento
-       #self.build_log_tab(self.writer_tabulari,mode)
-            #endregion
+           self.action_report_for_episode.append(self.action_report)
+          
+           self.ep_report.append(self.env.Obseravtion_DataFrame)
+       
+       self.main_network.save(f'{self.path_2}/Modello.h5')
     #endregion
 
     #region Utils
@@ -251,35 +261,30 @@ class Trainer():
         self.loss = loss_
 
         try:
+
+            self.main_network.compile(optimizer=optimaizer_, loss=loss_, metrics=metrics)
+
+            stato = self.env.reset()
+            stato = self.estrapola_tensore(stato[0], stato[1], stato[2])
+            tens = stato[0]
+
+            self.main_network = self.main_network.extract_standard_keras_model(shape=tens)
+
             self.main_network.compile(optimizer=optimaizer_, loss=loss_, metrics=metrics)
 
             #TODO: per ora verificare la congruenza dei pesi
             # TODO: ho dovuto rimandare la crazione della target ad una seconda istanza della main
-            #self.target_network = tf.keras.models.clone_model(self.main_network)
+            self.target_network = tf.keras.models.clone_model(self.main_network)
             self.target_network.set_weights(self.main_network.get_weights())
             self.target_network.compile(optimizer=optimaizer_, loss=loss_, metrics=metrics)
 
-        except ValueError as e:
-            raise e('modelli non compilati, verificare che l ambinte sia inizializzato')
-
-   
+        except Exception as e:
+            print(f'Model Complie Error {str(e)}')
 
     # Campionamento del Batch
     def campionamento(self, batch_size):
         stati, azioni, ricompense, stati_successivi, terminati = self.replayer.sample(batch_size)#zip(*batch)
         return stati, azioni, ricompense, stati_successivi, terminati
-
-    #HINT: spostato in replay buffer
-    #def Estrai_Stati(self, tulpa_di_stati_successivi, ricompense, terminati):
-    #    # estraggo tutti i tensori dall indice zero di ogni elemento della lista
-    #    tensori = [t[0] for t in tulpa_di_stati_successivi]
-
-    #    # Li combino in un unico tensore
-    #    tensore = tf.stack(tensori)
-    #    ricompense = tf.stack(ricompense)
-    #    terminati = tf.stack(terminati)
-
-    #    return tensore , ricompense, terminati
 
     # TODO: Richiede una normalizzazione nell estrazione dei dati
     def estrapola_tensore(self, stato : np.array , ricompensa, terminato):
@@ -295,7 +300,7 @@ class Trainer():
 
     # Verificare la funzione di riduzione di epsilon
     def reduce_epsilon(self):
-        decay_rate = (self.epsilon_end - self.epsilon_end) / self.epsilon_reduce
+        decay_rate = (self.epsilo_start - self.epsilon_end) / self.epsilon_reduce
 
         val = max(self.epsilon - decay_rate , self.epsilon_end)
         self.epsilon = val
@@ -306,7 +311,7 @@ class Trainer():
     def save(self, destination = 0, tipo = 0):
 
         if (destination == 0) and (tipo == 0):
-            self.main_network.save(f'Models/{self.main_network.name}_{self.date_str}.h5')
+            self.main_network.save(f'Modelli/{self.main_network.name}_{self.date_str}.h5')
         if tipo == 0:
             self.main_network.save(destination)
         else:

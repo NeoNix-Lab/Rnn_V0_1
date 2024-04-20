@@ -3,6 +3,8 @@ import json
 from os import name
 import tensorflow as tf
 from Services import Db_Manager as dbm
+import keras as k
+
 
 class layers_type(Enum):
         INPUT = 'input'
@@ -101,6 +103,7 @@ class CustomDQNModel(tf.keras.Model):
 
     def build_layers(self, notes='No Notes'):
         try:
+            layer_counter = 0
             for i in self.lay_obj:
                 if i.type == layers_type.INPUT:
                     i.layer['params']['input_shape'][0] = self.window_size
@@ -108,8 +111,11 @@ class CustomDQNModel(tf.keras.Model):
             raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
 
         for layer_config in self.lay_obj:
+            layer_counter += 1
             layer_type = layer_config.layer['type']
+            unique_name = f'{layer_type}_{layer_counter}'
             config = {key: value for key, value in layer_config.layer['params'].items() if key != 'type'}
+            config['name'] = unique_name
             try:
                 layer = getattr(tf.keras.layers,layer_type)(**config)
                 self.model_layers.append(layer)
@@ -293,5 +299,50 @@ class CustomDQNModel(tf.keras.Model):
             ids_tulpe.append((last_id, id, index))
 
         dbm.push(ids_tulpe, self.DB_RELATION_SCHEMA, self.DB_RELATION_INSERT_QUERY)
+
+    #def extract_standard_keras_model(self, shape):
+    #    """Estrae e restituisce un modello standard Keras dai layer di questo modello personalizzato."""
+    #    try:
+    #        # Crea un nuovo input layer che corrisponde all'input del modello originale
+    #        new_input =  k.Input(shape=shape.shape)
+
+    #        # Collega l'input ai layer del modello personalizzato
+    #        x = new_input
+    #        for layer in self.model_layers:
+    #            x = layer(x)
+
+    #        # Crea un nuovo modello standard Keras
+    #        standard_model = k.Model(inputs=new_input, outputs=x)
+            
+    #        return standard_model
+    #    except Exception as e:
+    #        print(f'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ {e}')
+
+    def extract_standard_keras_model(self, shape):
+        """Extracts and returns a standard Keras model from this custom model's layers."""
+        try:
+            # Assuming 'self.model_layers' is a list of the layers you want to include
+            if not self.model_layers:
+                raise ValueError("Model layers are undefined or empty")
+
+            # Create a new input layer that matches the input shape of the original model
+            # Assuming the first layer of your model is configured correctly
+            #input_shape = self.model_layers[0].input_shape[1:]  # Exclude the batch size dimension
+            new_input = k.Input(shape=shape.shape)
+
+            # Connect the input to the first layer and then to each subsequent layer
+            x = new_input
+            for layer in self.model_layers:
+                x = layer(x)
+
+            # Create a new standard Keras model
+            standard_model = k.Model(inputs=new_input, outputs=x)
+            print(f"WWWWWWWWWWWWWWWWWWWWWWWWWWWWW TYPE {type(standard_model)}")
+
+            return standard_model
+        except Exception as e:
+            print(f"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWError creating standard Keras model: {str(e)}")
+            return None
+        
     #endregion
 

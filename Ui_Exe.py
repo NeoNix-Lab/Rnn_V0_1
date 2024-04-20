@@ -60,6 +60,7 @@ radi = False
 
 if 'Training' in st.session_state:
     radi = st.checkbox('Usa il train nello stato')
+    # TODO: QUESTA OPZIONE AL MOMENTO E INUTILE E CMQ TRAINING E UN PUSH ON DB
     if radi:
         st.write(radi)
 

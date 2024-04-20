@@ -36,10 +36,9 @@ def build_training_from_tr_record(record):
         function_ = db.retive_a_list_of_recordos('id', 'functions', train.function_id)
         _function = rw.Rewar_Function.convert_db_response(function_[0])
         _model = build_static_model_from_id(train.model_id, _process.window_size)
-        # HACK: creo qui un istanza di target modedl perche main model e inclonabile molto probabilmente pere iun impossibilita di copiare i layers
-        _target_model = build_static_model_from_id(train.model_id, _process.window_size)
+       
 
-        return _function, _process, _model, train, _target_model
+        return _function, _process, _model, train
         
     except ValueError as e :
         raise(f'errore nella costruzione del processo completo dal record del training : ################################{e}')
@@ -94,6 +93,37 @@ def build_and_test_envoirment(data:pd.DataFrame, function:rw.Rewar_Function, pro
     print(f'[[[[[[[[[[[[[[[{s[0].head(30)}]]]]]]]]]]]]]]]')
 
     return env, env.Obseravtion_DataFrame
+
+def display_stats(_data_frame:pd.DataFrame, printed_colum:list(), xmax_add=100, facecolor='lightgreen', plot_color='lightblue'):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_xlim(0, len(_data_frame['step']) + xmax_add)
+    ax.set_ylim(_data_frame[printed_colum].values.min(), _data_frame[printed_colum].values.max())
+
+    for col in printed_colum:
+        ax.plot(_data_frame.index, _data_frame[col], label=col) 
+
+    fig.patch.set_facecolor(facecolor)
+    ax.set_facecolor(plot_color)
+    texto = ax.text(0.05, 0.95, '', transform=ax.transAxes, fontsize='medium')
+    plt.title('Series Details')
+    plt.xlabel('Step')
+    plt.ylabel('Valore')
+    plt.legend()
+
+    st.pyplot(fig)
+
+#def concatena_liste_df(dataframes):
+#    df = []
+
+#    try:
+#        for i in range(len(dataframes)):
+#            #d = pd.concat(dataframes[i], ignore_index=True)
+#            d = dataframes[0].concat(dataframes[1], ignore_index=True)
+#            df.append(d)
+
+#        return df
+#    except ValueError as e:
+#        raise e
 
 def build_vid(env, destination_path, frame_per_sec=6, printed_colum = ['Span_A_Fast','Span_B_Fast'], xmax_add=100,
           numero_barre = 100, pointer_=r'C:\Users\user\Downloads\ffmpeg-2023-12-23-git-f5f414d9c4-essentials_build\bin\ffmpeg.exe', BE_Type='Agg', data = 0):

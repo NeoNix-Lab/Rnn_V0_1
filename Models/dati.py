@@ -39,13 +39,20 @@ class Dati():
             self.data = self.riduci_df_alle_colonne(df)
         except ValueError as e :
             raise(f'Errore nel recupero dei dati : {e}')
-        self.train_data_ = None
-        self.work_data_ = None
-        self.test_data_ = None
-        try:
-            self.set_data(train_data,work_data,test_data, decrease_data)
-        except  ValueError as e:
-            raise(e)
+        self.train_data_ = self.data[0:self.work_data]
+        if  self.work_data != -1:
+            self.work_data_ = self.data[self.train_data:self.work_data]
+        else:
+            self.work_data_ = None
+        if self.test_data != -1:
+            self.test_data_ = self.data[self.work_data:self.test_data]
+        else:
+            self.test_data_ = None
+        # TODO: posso recuperare il vecchio sistema di set dei dati perche era migliore
+        #try:
+        #    self.set_data(train_data,work_data,test_data, decrease_data)
+        #except  ValueError as e:
+        #    raise(e)
         #self.attributi = self.__dict__.copy()
 
 
@@ -62,7 +69,7 @@ class Dati():
     def convert_db_response(obj):
         try:
             df_or = obj[7]
-            resoult = Dati(id=obj[0], name=obj[1], df_or_colonne=df_or, train_data=obj[2], work_data=obj[3], test_data=obj[4], 
+            resoult = Dati(id=obj[0], name=obj[1], df_or_colonne=df_or, train_data=int(obj[2]), work_data=int(obj[3]), test_data=int(obj[4]), 
                            decrease_data=obj[5], db_reference=obj[6])
 
             return resoult
@@ -147,6 +154,8 @@ class Dati():
             return df_ridotto
         except json.JSONDecodeError:
             raise ValueError("La stringa fornita non e un JSON valido.")
+
+
 
 
     

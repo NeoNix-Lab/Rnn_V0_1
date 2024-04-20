@@ -6,10 +6,11 @@ from datetime import datetime as dt
 
 class Training_statu(Enum):
     PLANNED = 'planned'
-    TRAINING = 'training'
+    TESTED = 'tested'
     TRAINED = 'trained'
 
 class Training_Model():
+    DB_TAB_NAME = 'training'
     # TODO: aggiungere i trading data as dictionary fees, initial_balance
     DB_SCHEMA = '''CREATE TABLE IF NOT EXISTS training (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +20,7 @@ class Training_Model():
                process_id INTEGER,
                model_id INTEGER,
                log_path TEXT,
-               best_result TEXT,  -- Assumendo che il miglior risultato sia testuale; cambia il tipo di dati se necessario
+               best_result REAL,  -- Assumendo che il miglior risultato sia testuale; cambia il tipo di dati se necessario
                notes TEXT,
                name TEXT,
                FOREIGN KEY (function_id) REFERENCES functions(id),  -- Assicurati che 'functions' sia il nome corretto della tabella e 'id' il nome della colonna chiave primaria
@@ -32,7 +33,7 @@ class Training_Model():
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);'''
 
     def __init__(self, name, status:Training_statu, function_id, process_id, model_id, log_path, id='not_posted_yet',
-                 creation_data=dt.now().strftime('%Y-%m-%d %H:%M:%S'), best_resoult='Not_Trained_Yet'):
+                 creation_data=dt.now().strftime('%Y-%m-%d %H:%M:%S'), best_resoult=0):
         self.id = id
         self.status = status
         self.function_id = function_id
@@ -64,11 +65,30 @@ class Training_Model():
         
 
     # TODO: some implementation not implemented
-    def update_status():
-        pass
+    def update_status(self, status:Training_statu):
+        stat = status.value
+        update_dict = {'status':stat}
+        requ_dict = {'id':self.id}
+        dbm.new_update_record(self.DB_TAB_NAME,update_dict,requ_dict)
 
-    def update_best_resoult(self):
-        pass
+    def update_best_resoult(self, best_resoult):
+        override = False
+        try:
+            if float(self.best_resoult) < best_resoult:
+                override = True
+        except:
+            override = True
+
+        if override == True:
+            update_dict = {'best_result':best_resoult}
+            requ_dict = {'id':self.id}
+            dbm.new_update_record(self.DB_TAB_NAME,update_dict,requ_dict)
+
+    def update_path(self, path):
+        update_dict = {'log_path':path}
+        requ_dict = {'id':self.id}
+        dbm.new_update_record(self.DB_TAB_NAME,update_dict,requ_dict)
+
 
     @abstractmethod
     def retrive_list_records_by_name(names:list[str]):
