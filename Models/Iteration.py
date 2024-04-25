@@ -40,7 +40,7 @@ class Iterazione:
         Inserisce l'iterazione corrente nel database.
         """
         data_tuple = [(self.name, self.dati_id, self.training_id, self.train_result, self.test_result, self.work_result, self.log_path)]
-        dbm.push(data_tuple, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 0, 'iterazioni')
+        dbm.push(data_tuple, self.DB_SCHEMA, self.INSERT_QUERY)
 
     @staticmethod
     def convert_db_response(obj):

@@ -96,18 +96,24 @@ schema: lista di dizionari
 """
 #endregion
 
+if 'act_page' not in st.session_state:
+    st.session_state.act_page = utils.PageName.FUNCTION.value
+else:
+    st.session_state.act_page = utils.PageName.FUNCTION.value
 
-st.set_page_config(
-    page_title="Rnn_Function_Builder",
-    page_icon="random",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'Get Help': 'https://docs.streamlit.io/library/api-reference/layout',
-        'Report a bug': "https://https://shadcn.streamlit.app/DatePicker",
-        'About': "# Here you will able to build Customs RL Functions"
-    }
-)
+#utils.navigate()
+
+#st.set_page_config(
+#    page_title="Rnn_Function_Builder",
+#    page_icon="random",
+#    layout="wide",
+#    initial_sidebar_state="collapsed",
+#    menu_items={
+#        'Get Help': 'https://docs.streamlit.io/library/api-reference/layout',
+#        'Report a bug': "https://https://shadcn.streamlit.app/DatePicker",
+#        'About': "# Here you will able to build Customs RL Functions"
+#    }
+#)
 
 st.title('Functions')
 
@@ -200,8 +206,6 @@ if 'Data' in st.session_state:
     # TODO: verificare la struttura della tabella di env per assicurare la difficile compatibilita
     # TODO: aggiungere funzione per visulizzare some data in order to optimize data_schema function
     if build_btn == 'Create' and 'Obj_Function' not in st.session_state and 'Pushed' not in st.session_state:
-    
-       
        
         name = st.text_input('Insert your Logic Name')
     

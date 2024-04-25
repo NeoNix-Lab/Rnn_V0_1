@@ -60,7 +60,7 @@ class Dati():
         #HACK: anche questo viene verificato secondo il nome
         try:
             data_tulpe = [(self.name, self.train_data, self.work_data, self.test_data, self.decrease_data, self.db_references, self.df_or_colonne),]
-            dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY, 'name', 0, 'dati')
+            dbm.push(data_tulpe, self.DB_SCHEMA, self.INSERT_QUERY)
         except ValueError as e:
             raise(e)
        

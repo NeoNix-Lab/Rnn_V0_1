@@ -89,6 +89,11 @@ class Training_Model():
         requ_dict = {'id':self.id}
         dbm.new_update_record(self.DB_TAB_NAME,update_dict,requ_dict)
 
+    def update_notes(self, notes):
+        update_dict = {'notes':notes}
+        requ_dict = {'id':self.id}
+        dbm.new_update_record(self.DB_TAB_NAME,update_dict,requ_dict)
+
 
     @abstractmethod
     def retrive_list_records_by_name(names:list[str]):

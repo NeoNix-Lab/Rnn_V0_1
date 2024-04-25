@@ -108,7 +108,6 @@ class Trainer():
         print(f'XXXXXXXXXXXXXXXXXXXXXXX Update Main  ########################')
         print(f'XXXXXXXXXXXXXXXXXXXXXXX Model_summary {self.target_network.summary()}########################')
         print("XXXXXXXXXXXXXXXXXXXXXXX Shape of predictions:", prediction.shape)
-        print("XXXXXXXXXXXXXXXXXXXXXXX Predictions:", prediction[78])
         print("XXXXXXXXXXXXXXXXXXXXXXX Shape of terminati_int:", _term.shape) #(1,1)
         print("XXXXXXXXXXXXXXXXXXXXXXX Shape of terminati_flatten:", _term.flatten().shape) #(1)
         print("XXXXXXXXXXXXXXXXXXXXXXX Shape of azioni:", azioni.shape) #(batch_size, 1)
@@ -150,6 +149,7 @@ class Trainer():
     def epsylon_greedy_policy(self, state, model):
         n_action = self.env.coutnaction()
         self.action_count+=1
+        self.action_report['selection'][self.env.current_step] = self.epsilon 
 
         if np.random.rand() < self.epsilon:
             print(f'################################## Action Randomly Selected ########################')
@@ -189,7 +189,7 @@ class Trainer():
 
        for episodio in range(n_episodi):
            print(f'##################################    New Episode: {episodio}  ########################')
-           self.action_report = pd.DataFrame(data=np.zeros((len(self.env.data),2)),columns=['action','selection'])
+           self.action_report = pd.DataFrame(data=np.zeros((len(self.env.data),3)),columns=['action','selection','epsilon'])
 
            self.episode = episodio
            #HACK: non sto mai pulendo la queque
@@ -240,6 +240,8 @@ class Trainer():
 
                if mode != 'step':
                    coda = len(self.replayer.buffer) 
+                   print(f'coda : {coda}')
+                   print(f'batch_size : {batch_size}')
  
                    if coda >= batch_size:
                         batch = self.campionamento(batch_size)
@@ -325,13 +327,11 @@ class Trainer():
                 if hasattr(self.CustomCallback[key], 'log_dir'):
                     self.CustomCallback[key].log_dir = self.path_2 + key
     
+    def test_existing_model(self, path, data, env):
 
-    def test_existing_model(self, path, env=0):
+        network = tf.keras.models.load_model(path)
 
-        network = model = tf.keras.models.load_model(path)
-
-        if env == 0:
-            env = self.env
+        env.data = data
 
         stato = env.reset()
 
@@ -341,11 +341,11 @@ class Trainer():
         while not tf.math.equal(stato[2] , True):
         
             tens = tf.expand_dims(stato[0], axis=0)
-            Q_values = self.main_network.predict(tens, verbose=0)
+            Q_values = network.predict(tens, verbose=0)
             x = np.argmax(Q_values[0])
-            azione_one_hot = np.zeros(len(env.action_space_tab))
-            azione_one_hot[x] = 1
-            azione = np.argmax(azione_one_hot)
+            #azione_one_hot = np.zeros(len(env.action_space_tab))
+            #azione_one_hot[x] = 1
+            azione = np.argmax(x)
             stato_successivo, ricompensa, finito, _ = env.step(azione)
         
             # Estraggo E Aggiungo Una dimensione al nuvo stato

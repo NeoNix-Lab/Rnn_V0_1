@@ -15,8 +15,28 @@ st.set_page_config(
     page_icon=''
     )
 
+if 'act_page' not in st.session_state:
+    st.session_state.act_page = utils.PageName.HOME.value
+else:
+    st.session_state.act_page = utils.PageName.HOME.value
+    
+
+utils.navigate()
+
 st.title('Iteration_Overview')
 #region Init_Method
+# HINT: le funzioni ag_grid devono essere json serializabbili
+style_by_status = """
+function(params) {
+    if (params.value === 'planned') {
+        return {backgroundColor: 'limegreen', color: 'white'};
+    } else {
+        return {backgroundColor: 'transparent', color: 'black'};
+    }
+}
+"""
+
+
 def pulisci_e_filtra_dizionari(lista_dizionari, colonne_desiderate):
     lista_modificata = []
 
@@ -76,7 +96,7 @@ if radi == False or 'Training' not in st.session_state:
         obj_converted.append(obj)
         obj_converted_attr_dict.append(obj.attributi)
     
-    #tento la sostituzione
+   
     new_attr_dict = pulisci_e_filtra_dizionari(obj_converted_attr_dict, list(obj_converted_attr_dict[0].keys()))
     
     df = pd.DataFrame(new_attr_dict)
@@ -84,10 +104,22 @@ if radi == False or 'Training' not in st.session_state:
     gb.configure_selection('single', use_checkbox=True)
     grid_options = gb.build()
     grid_options['headerHeight'] = 50
+
+    grid_options['defaultColDef'] = {
+        'editable': False, # Set to True if you want columns to be editable
+        'resizable': True, # Allows resizing columns
+        'width': 150,      # Default width of each column
+        'autoWidth': True,
+        'autoHeight': True
+    }
     grid_options['groupHeaderHeight'] = 75
+    #grid_options['columnDefs'] = [
+    #    {**col, 'rowStyle': style_by_status if col['field'] == 'status' else None}
+    #    for col in grid_options['columnDefs']
+    #]
     
     response = Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
-                      enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True)
+                      enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     
     try:
         if response.selected_rows_id is not None:
@@ -103,7 +135,7 @@ if radi == False or 'Training' not in st.session_state:
     with col3:
         if st.button('Try_Buuild'):
 
-            st.session_state['Selected_Iteration'] = t_iteration[id-1]
+            st.session_state['Selected_Iteration'] = t_iteration[id]
             st.switch_page('pages/Ui_Training.py')
 
 with col1:

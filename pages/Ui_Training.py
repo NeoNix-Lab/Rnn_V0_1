@@ -33,7 +33,58 @@ if 'Selected_Iteration' not in st.session_state:
 iter = st.session_state['Selected_Iteration']
 function, process, model_, _train = utils.build_training_from_tr_record(iter)
 
-train_or_test = st.select_slider('Train or Test', ['New_Train','Test_Exisisting_model'],label_visibility='collapsed')
+ex = st.expander('Process_Details')
+with ex:
+    st_utils.show_process_details(process)
+
+ex_f = st.expander('Function_Details')
+with ex_f:
+    st_utils.show_function_details(function)
+
+ex_l = st.expander('Layers_Details')
+with ex_l:
+    st_utils.show_model_details(model_)
+
+ex_t = st.expander('Training_Details')
+with ex_t:
+    st_utils.show_train_details(_train)
+
+untrained, res = utils.find_not_trained_iters(_train.id)
+
+if res == 'untrained':
+    st.warning('untrained iters')
+elif res == 'empty':
+    st.error('no builded iters')
+
+train_or_test = st.select_slider('Train or Test', ['New_Train', 'Work_On_Model','Test_Exisisting_model'],label_visibility='collapsed')
+    
+if res == 'untrained':
+    ex_i = st.expander('Untrained_Iters')
+    with ex_i:
+        names = [i.name for i in untrained]
+        selected = st.selectbox('Untrained', names) 
+        if selected:
+            datti_id = (untrained[names.index(selected)].dati_id)
+            dats = db.retive_a_list_of_recordos('id', 'dati', datti_id)
+            dats = dati.Dati.convert_db_response(dats[0])
+            st.write(dats.test_data_.head(5))
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.write(f'Train Data : {dats.train_data}')
+            with c2:
+                st.write(f'Test Data : {dats.test_data}')
+            with c3:
+                st.write(f'Work Data : {dats.work_data}')
+
+            if st.button('Train This'):
+                 # TODO: need implementation
+                 st.error('not implemented yet')
+                 #if 'Iter' not in st.session_state:
+                 #    st.session_state.Iter = iteration.Iterazione.convert_db_response(dats)
+                 #else:
+                 #    st.session_state.Iter = iteration.Iterazione.convert_db_response(dats)
 
 if train_or_test == 'New_Train':
 
@@ -62,20 +113,20 @@ if train_or_test == 'New_Train':
         if st.button('Build_Iteration'):
             d = dati.Dati(st.session_state.ichi_ref,st.session_state.Data, train_data,work_Data,test_Data, name=name)
             d.pusch_on_db()
-            d_response= db.retive_a_list_of_recordos('name', 'dati', name)
-            dati_i = dati.Dati.convert_db_response(d_response[0])
+            d_response= db.retrive_last('dati', '*')
+            dati_i = dati.Dati.convert_db_response(d_response)
             dati_id = dati_i.id
             
             #HINT: non sto registrando i dati nella sezione
             i = iteration.Iterazione(iteration_name,dati_id,_train.id)
             i.push_on_db()
-            iter = db.retive_a_list_of_recordos('name','iterazioni',iteration_name)
+            iter = db.retrive_last('iterazioni','*')
 
 
             if 'Iter' not in st.session_state:
-                st.session_state.Iter = iteration.Iterazione.convert_db_response(iter[0])
+                st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
             else:
-                st.session_state.Iter = iteration.Iterazione.convert_db_response(iter[0])
+                st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
     
             if 'Env' not in st.session_state:
                 st.session_state.Env = env, test_env = utils.build_and_test_envoirment(dati_i.train_data_, function, process)
@@ -83,6 +134,7 @@ if train_or_test == 'New_Train':
                 st.session_state.Env = env, test_env = utils.build_and_test_envoirment(dati_i.train_data_, function, process)
 
             st.experimental_rerun()
+
 
     if 'Env' in st.session_state:
         st.success('Enviroment correctly setted up')
@@ -100,7 +152,10 @@ if train_or_test == 'New_Train':
             GAMMA = process.gamma
             TAU = process.tau
             EPOCHE = process.epochs
+            BATCH_SIZE = int(process.window_size)
             #TODO: manca la replay capacity
+            #TODO: il batch_size e la dimensione della afinestra
+
             _mod = model.Trainer(st.session_state.Env[0],  model_, EPSILON_START,EPSILON_END,EPSILON_REDUCE, GAMMA, TAU, _train.name, epoche=EPOCHE)
 
             # TODO: manca la selezione delle metriche 
@@ -114,7 +169,7 @@ if train_or_test == 'New_Train':
                 output_placeholder = st.empty()
 
             _mod.compile_networks(process.optimizer, process.loss, metrics=['accuracy'])
-            _mod.Train(process.n_episode, process.type,'batch')
+            _mod.Train(process.n_episode, process.type, BATCH_SIZE)
 
             if show_out:
                 output_placeholder.text_area("Captured Output", value=redirected_output.getvalue(), height=300)
@@ -140,40 +195,66 @@ if train_or_test == 'New_Train':
             _train.update_path(_mod.path)
             #endregion
 
-        episodes = [i for i in range(len(st.session_state._mod.ep_report))]
-        episode = st.selectbox('Select_Episode', episodes)
-        if episodes:
-            details_type = st.select_slider(label='Show_Details',label_visibility='collapsed', options=['Observatio_Df', 'Action_Selection'])
+        if '_mod' in st.session_state:
+            note = st.text_area('Update Training Notes')
+            p_notes = st.button('Push_Notes')
+            
+            if p_notes:
+                _train.update_notes(note)
 
-            if details_type == 'Observatio_Df':
-                lines = [i for i in st.session_state._mod.ep_report[episode].columns]
-                linee = st.multiselect('Select_your_Lines', lines, default=['Price', 'balance'])
-        
-                if len(linee) > 0:
-                    grapf = st_utils.display_stats(st.session_state.Env[0].Obseravtion_DataFrame,linee,facecolor='#3CB371FF',plot_color='#888888FF')
+            episodes = [i for i in range(len(st.session_state._mod.ep_report))]
+            episode = st.selectbox('Select_Episode', episodes)
+            if episodes:
+                details_type = st.select_slider(label='Show_Details',label_visibility='collapsed', options=['Observatio_Df', 'Action_Selection'])
 
-                gain = st.session_state._mod.ep_report[episode]['balance'].iloc[-1] - st.session_state._mod.env.initial_balance
-                st.warning(f'Guadagno durante l addestramento: {gain}')
+                if details_type == 'Observatio_Df':
+                    lines = [i for i in st.session_state._mod.ep_report[episode].columns]
+                    linee = st.multiselect('Select_your_Lines', lines, default=['Price', 'balance'])
+            
+                    if len(linee) > 0:
+                        grapf = st_utils.display_stats(st.session_state.Env[0].Obseravtion_DataFrame,linee,facecolor='#3CB371FF',plot_color='#888888FF')
 
-                if st.checkbox('Show Observatio DF'):
-                    st.write(st.session_state._mod.ep_report[episode])
+                    gain = st.session_state._mod.ep_report[episode]['balance'].iloc[-1] - st.session_state._mod.env.initial_balance
+                    st.warning(f'Guadagno durante l addestramento: {gain}')
 
-            else:
-                st.write(st.session_state._mod.action_report_for_episode[episode])
-                model_count = (st.session_state._mod.action_report_for_episode[episode]['selection'] == 'model').sum()
-                random_count = (st.session_state._mod.action_report_for_episode[episode]['selection'] == 'random').sum()
+                    if st.checkbox('Show Observatio DF'):
+                        st.write(st.session_state._mod.ep_report[episode])
 
-                st.warning(f'{model_count} azioni sono state selezionate dal modello')
-                st.warning(f'{random_count} azioni sono state selezionate randomicamente')
+                else:
+                    st.write(st.session_state._mod.action_report_for_episode[episode])
+                    model_count = (st.session_state._mod.action_report_for_episode[episode]['selection'] == 'model').sum()
+                    random_count = (st.session_state._mod.action_report_for_episode[episode]['selection'] == 'random').sum()
 
-        #if st.button('Save_Model'):
-        #    st.session_state._mod.save()
-
+                    st.warning(f'{model_count} azioni sono state selezionate dal modello')
+                    st.warning(f'{random_count} azioni sono state selezionate randomicamente')
 
         if st.sidebar.button('clear env'):
             st.session_state.pop('Env')
             st.session_state.pop('Iter')
             st.experimental_rerun()
+
+else:
+    st.write(_train.id)
+    lis_of_iters = db.retive_a_list_of_recordos('training_id','iterazioni', [_train.id])
+    _iteration_obj = []
+    _iteration_names = []
+
+    for i in lis_of_iters:
+        obj = iteration.Iterazione.convert_db_response(i)
+        _iteration_obj.append(obj)
+        _iteration_names.append(obj.name)
+
+    selected_iter = st.selectbox('Select_your_iter', _iteration_names)
+    if selected_iter:
+        index = _iteration_names.index(selected_iter)
+        st.write(f'indice del elemento selezionato: {_iteration_names.index(selected_iter)}')
+        st.write(f'path: {_iteration_obj[index].log_path}')
+
+    if st.button('test'):
+        dat = st.session_state.Env[0].data
+        en = st.session_state.Env[0]
+        res = st.session_state._mod.test_existing_model(f'{_iteration_obj[index].log_path}Modello.h5', dat, en)
+        st.write(res)
 
         
         
