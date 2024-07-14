@@ -19,7 +19,7 @@ Ensure you have [Python](https://www.python.org/downloads/) installed on your sy
 
 Clone this repository to your local machine using:
 ```sh
-git clone https://github.com/your-repository.git
+git clone [https://github.com/your-repository.git](https://github.com/DevPloyOrg/Rnn_V0_1.git)
 cd your-repository
 Create a Virtual Environment
 Using Conda
