@@ -66,8 +66,35 @@ You can initiate training runs, monitor progress, and save results.
 Once training is complete, use the Testing page to evaluate the performance of trained models.
 This includes loading saved models, running tests, and displaying results.
 
+## Roadmap
+
+We have exciting plans to enhance and expand the capabilities of our application. Below are some of the key features and improvements we are working on:
+
+1. **Improvement of Training Review Section**:
+   - Enhance the UI/UX for better visualization and analysis of training sessions.
+   - Add more detailed metrics and performance charts.
+
+2. **Improvement of Model Testing Section**:
+   - Expand the range of test scenarios and validation techniques.
+   - Include more comprehensive reporting and error analysis tools.
+
+3. **Direct Integration with Google Colab**:
+   - Allow users to run and train models directly in Google Colab.
+   - Provide seamless synchronization of data and models between the local environment and Colab.
+
+4. **Direct Integration with Third-Party Trading Applications**:
+   - Integrate with popular trading platforms for live trading and backtesting.
+   - Enable automated trading strategies based on trained models.
+
+5. **Multi-Platform Release with MAUI**:
+   - Develop and release a multi-platform application using .NET MAUI.
+   - Ensure compatibility with Windows, macOS, iOS, and Android.
+
+Stay tuned for updates as we continue to enhance our application and bring new features to our users!
+
+
 License
 This project is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the LICENSE file for details.
 
 Contact
-For any queries or issues, please contact your-email@example.com.
+For any queries or issues, please contact nicoladotmontanari@yahoo.com.
