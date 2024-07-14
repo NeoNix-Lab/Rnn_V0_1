@@ -475,7 +475,7 @@ def st_sessions_states(statename, statevalue):
 def header(title, page_name:PageName):
     # st.divider()
     
-    c1,c2,c3,c4,c5 = st.columns(5,gap='small')
+    c1,c2,_,_,_,_,_,_,_,c3,c4,c5 = st.columns(12,gap='small')
     with c1:
         st.title(f'{title}')
         
