@@ -7,6 +7,10 @@ from Models.Model_Static import CustomDQNModel as Models
 from Models.Model_Static import Layers as Layers
 from Models.dati import Dati
 from Services.config import Config
+import os
+import subprocess
+import webbrowser
+from tensorboard import program
 
 DEFOULT_CODE = '''
 def flex_buy_andSell(env, price_column_name: str, action: str):
@@ -99,7 +103,7 @@ def retrive_generic_obj(obj_type:str, db_config:Config):
         records = db.retrive_all(obj_type)
             
         obj_class = object_mapping.get(obj_type.lower())
-    
+        
         for obj in records:
             var = obj_class.convert_db_response(obj,db_config)
             lis.append(var)
@@ -109,4 +113,28 @@ def retrive_generic_obj(obj_type:str, db_config:Config):
         error = e
     
     return lis, lis_name, ids, error
+
+def run_tensorboard(log_dir):
+    # Ensure the log directory exists
+    if not os.path.exists(log_dir):
+        message = f"Log directory {log_dir} does not exist."
+        print(message)
+        return message, False
+
+    # Start TensorBoard
+    tb = program.TensorBoard()
+    tb.configure(argv=[None, '--logdir', log_dir])
+    url = tb.launch()
+
+    # Open TensorBoard in the default web browser
+    webbrowser.open(url)
+    message = f"TensorBoard started at {url}"
+    print(message)
+    return message, True
+
+def compare_function_to_dati(function_obj:rw, dati_obj:Dati):
+    chiavi = [i for i in function_obj.data_schema.keys()]
+    columns = [i for i in dati_obj.data.columns]
+
+    return chiavi == columns
     

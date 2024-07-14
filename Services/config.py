@@ -1,6 +1,8 @@
 import json
 import os
 
+#TODO: Menage db configuration for colab
+
 class Config:
     """
     Class to manage the application's configuration.

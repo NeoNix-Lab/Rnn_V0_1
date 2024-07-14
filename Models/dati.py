@@ -54,7 +54,7 @@ class Dati(BaseModelsClass):
         return '''INSERT INTO dati (name, train_data, work_data, test_data, decrease_data, db_references, colonne)
                   VALUES (?, ?, ?, ?, ?, ?, ?);'''
 
-    def __init__(self, tab_namereference, df_or_colonne, db_config: Config, train_data=0.5, work_data=0, test_data=0.5, decrease_data=0, name='Not_Named', id='Not_Posted_Yet'):
+    def __init__(self, tab_namereference, df_or_colonne, db_config: Config = Config(), train_data=0.5, work_data=0, test_data=0.5, decrease_data=0, name='Not_Named', id='Not_Posted_Yet'):
         self.id = id
         self.name = name
         self.train_data = train_data
@@ -69,6 +69,7 @@ class Dati(BaseModelsClass):
             #HACK: dato che nonb salvo le impostazioni di configurazione salvo il path del df ma utilizzo solo il nome per ecuperare i dati
             retriver = DataRetriver(self.db_config)
             df = retriver.fetch_data(self.name)
+            
             self.data = self.riduci_df_alle_colonne(df)
         except ValueError as e:
             raise ValueError(f'Error retrieving data: {e}')
@@ -198,6 +199,8 @@ class Dati(BaseModelsClass):
             colonne = json.loads(self.df_or_colonne)
             if not isinstance(colonne, list):
                 raise ValueError("The input JSON must represent a list of column names.")
+            
+            print(f'@@@@@@@@@@@@@@@@@{data}')
             
             colonne_presenti = [col for col in colonne if col in data.columns]
             df_ridotto = data[colonne_presenti]

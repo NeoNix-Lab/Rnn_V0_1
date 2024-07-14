@@ -13,6 +13,7 @@ from st_aggrid import AgGrid as Ag, grid_options_builder
 from CustomDQNModel import Layers as l, CustomDQNModel as model
 import time
 from Services.config import Config
+from Services import Utils as logic_utils
 import os
 
 st.set_page_config(
@@ -80,10 +81,10 @@ obj_converted = []
 obj_converted_attr_dict = []
     
 for i in t_iteration:
-           obj = tm.Training_Model.convert_db_response(i)
-           obj_converted.append(obj)
-           
-           obj_converted_attr_dict.append(obj.attributi)
+    obj = tm.Training_Model.convert_db_response(i)
+    obj_converted.append(obj)
+    
+    obj_converted_attr_dict.append(obj.attributi)
 
 utils.header('Training Home', PageName.HOME)
         
@@ -97,73 +98,85 @@ if explorer == 'Train':
    
 
     if 'Training' in st.session_state:
-        radi = st.checkbox('Usa il train nello stato')
+        radi = st.checkbox('Use Current Traing Set_Up?')
         # TODO: QUESTA OPZIONE AL MOMENTO E INUTILE E CMQ TRAINING E UN PUSH ON DB
         if radi:
-            st.write(radi)
+            espa_tr = st.expander('Traing Details')
+            with espa_tr:
+                utils.show_train_details(st.session_state.Training)
     
     #region tabella
    
-    if radi == False or 'Training' in st.session_state:
+    # if radi == False or 'Training' in st.session_state:
             
         # st.write(obj_converted_attr_dict)
             
-        for obj in obj_converted_attr_dict:
-            if isinstance(obj['status'], tm.Training_statu):
-                obj['status'] = obj['status'].name
-        
-        # HINT: La pulizia del dizionario non funziona    
-        #new_attr_dict = pulisci_e_filtra_dizionari(obj_converted_attr_dict, list(obj_converted_attr_dict[0].keys()))
+    for obj in obj_converted_attr_dict:
+        if isinstance(obj['status'], tm.Training_statu):
+            obj['status'] = obj['status'].name
     
-        df = pd.DataFrame(obj_converted_attr_dict)
-        gb = grid_options_builder.GridOptionsBuilder.from_dataframe(df)
-        gb.configure_selection('single', use_checkbox=True)
-        grid_options = gb.build()
-        grid_options['headerHeight'] = 50
+    # HINT: La pulizia del dizionario non funziona    
+    #new_attr_dict = pulisci_e_filtra_dizionari(obj_converted_attr_dict, list(obj_converted_attr_dict[0].keys()))
     
-        grid_options['defaultColDef'] = {
-            'editable': False, # Set to True if you want columns to be editable
-            'resizable': True, # Allows resizing columns
-            'width': 150,      # Default width of each column
-            'autoWidth': True,
-            'autoHeight': True
-        }
-        grid_options['groupHeaderHeight'] = 75
-        #grid_options['columnDefs'] = [
-        #    {**col, 'rowStyle': style_by_status if col['field'] == 'status' else None}
-        #    for col in grid_options['columnDefs']
-        #]
+    df = pd.DataFrame(obj_converted_attr_dict)
+    gb = grid_options_builder.GridOptionsBuilder.from_dataframe(df)
+    gb.configure_selection('single', use_checkbox=True)
+    grid_options = gb.build()
+    grid_options['headerHeight'] = 50
+    
+    grid_options['defaultColDef'] = {
+        'editable': False, # Set to True if you want columns to be editable
+        'resizable': True, # Allows resizing columns
+        'width': 150,      # Default width of each column
+        'autoWidth': True,
+        'autoHeight': True
+    }
+    grid_options['groupHeaderHeight'] = 75
+    #grid_options['columnDefs'] = [
+    #    {**col, 'rowStyle': style_by_status if col['field'] == 'status' else None}
+    #    for col in grid_options['columnDefs']
+    #]
+    
+    response = Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
+                      enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+    
+    try:
+        if response.selected_rows_id is not None:
+            id = int(response.selected_rows_id[0])
+          
         
-        response = Ag(df,height=(30+(50*len(df))), gridOptions=grid_options, theme='alpine',
-                          enable_enterprise_modules=True, update_mode='SELECTION_CHANGED', fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
-        
-        try:
-            if response.selected_rows_id is not None:
-                id = int(response.selected_rows_id[0])
-               
-        except :
+           
+    except :
+        if radi == False:
             st.warning('No currently selected training')
+    
+    if radi == True:
+        st.warning('Using State Saved Training Set_Up')
+        
     #endregion
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3, gap='large')
     
-    if radi == False or 'Training' not in st.session_state:
-        with col3:
-            if st.button('Try_Buuild'):
-    
+    with col3:
+        if st.button('Run Your Training'):
+            if radi == False or 'Training' not in st.session_state:
                 st.session_state['Selected_Iteration'] = t_iteration[id]
-                st.switch_page('pages/Ui_Training.py')
-    
-    with col1:
-        if st.button('Add_New_Iteration'):
-            st.switch_page('pages/1Ui_function.py')
-            #TODO: momentaneamente sospesa la pulizia degli stati
-            st.session_state.clear()
+                
+            elif radi:
+                sel_item = next((item for item in obj_converted if item.name == st.session_state.Training.name))
+                selected_tulp_obj_index = indexOf(obj_converted, sel_item)
+                st.session_state['Selected_Iteration'] = t_iteration[selected_tulp_obj_index]
+                
+            st.switch_page('pages/Ui_Training.py')
+
+                
             
 else:
     st.subheader('Training Logs:')
     
-    obj_name = [o.name for o in obj_converted]
+    obj_trained = [o for o in obj_converted if o.status != tm.Training_statu.PLANNED]
+
+    obj_name = [o.name for o in obj_trained]
     training_selection = st.selectbox('Select Your Training', obj_name)
     
     index = indexOf(obj_name, training_selection)
@@ -188,37 +201,50 @@ else:
     
     last_path = os.path.join(selected_report_path, selected_type)
     
-    st.write(last_path)
+    st.subheader('Your Logs Path:')
+    st.success(last_path)
 
-    uploaded_file = st.file_uploader("Observation CSV file", type="csv",accept_multiple_files=True)
-    # uploaded_file_action = st.file_uploader("Actions CSV file", type="csv")
-    
-    # df = None
-    # df_action = None
-    if uploaded_file is not None:
-        
-        for i in range(len(uploaded_file)):
-            try:
-                ex = st.expander(f'Data_Settings_{i}', False)
-                df = pd.read_csv(uploaded_file[i])
-                df_len = len(df.iloc[:, 0])
-                with ex:
-                    mindatarange = st.slider(f'min data range_{i}', min_value=0, max_value=df_len, value=0)
-                    maxdatarange = st.slider(f'max data range_{i}', min_value=mindatarange, max_value=df_len, value=df_len)
-                    tables = st.checkbox(f'Show Tables_{i}')
-                    lines = [i for i in df.columns]
-                    linee = st.multiselect('Select_your_Lines', lines)
-                
-                new_df = df.iloc[mindatarange:maxdatarange]
-                
-                if tables:
-                    st.write("Loaded DataFrame:", df)
-                if new_df is not None:
+    if selected_type == 'actions' or selected_type == 'resoult': 
+        uploaded_file = st.file_uploader("Observation CSV file", type="csv",accept_multiple_files=True)
+
+        if uploaded_file is not None:
+            
+            for i in range(len(uploaded_file)):
+                try:
+                    ex = st.expander(f'Data_Settings_{i}', False)
+                    df = pd.read_csv(uploaded_file[i])
+                    df_len = len(df.iloc[:, 0])
+                    with ex:
+                        mindatarange = st.slider(f'min data range_{i}', min_value=0, max_value=df_len, value=0)
+                        maxdatarange = st.slider(f'max data range_{i}', min_value=mindatarange, max_value=df_len, value=df_len)
+                        tables = st.checkbox(f'Show Tables_{i}')
+                        lines = [i for i in df.columns]
+                        linee = st.multiselect('Select_your_Lines', lines)
                     
-                    if len(linee) > 0:
-                        grapf = utils.display_stats(new_df,linee,facecolor='#3CB371FF',plot_color='#888888FF')
-    
-            except Exception as e:
-                st.write(f"Error loading CSV file: {e}")
+                    new_df = df.iloc[mindatarange:maxdatarange]
+                    
+                    if tables:
+                        st.write("Loaded DataFrame:", df)
+                    if new_df is not None:
+                        
+                        if len(linee) > 0:
+                            grapf = utils.display_stats(new_df,linee,facecolor='#3CB371FF',plot_color='#888888FF')
+        
+                except Exception as e:
+                    st.write(f"Error loading CSV file: {e}")
+
+    elif selected_type == 'tensorboard':
+        _,_,t = st.columns(3,gap='large')
+        succes = None
+        message = 'Not Loaded Yet'
+
+        with t:
+            if st.button('Run Tensorboard'):
+                message, succes = logic_utils.run_tensorboard(last_path)
+        if succes == True:
+            st.success(message)
+        elif succes == False:
+            st.error(message)
+
             
     

@@ -29,7 +29,7 @@ class DataRetriver:
     def __init__(self, enviroment_config:Config=Config()):
         self.config = enviroment_config
         self.PATH = self.config.data_path
-
+        
     def create_table_from_csv(self, table_name: str, csv_path: str):
         """Creates a table in the database from a CSV file."""
         try:
@@ -55,10 +55,14 @@ class DataRetriver:
         """Fetches all data from the specified table."""
         try:
             conn = sqlite3.connect(self.PATH)
+            
             details = pd.read_sql(f"SELECT * FROM {table_name}", conn)
+            
             conn.close()
             return details
         except Exception as e:
+            print(f'@@@@@@@@@@@@@@@@@@#########################path: {self.PATH}')
+            
             print(f"Error fetching details: {e}")
             return None
 

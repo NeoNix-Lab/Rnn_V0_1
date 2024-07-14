@@ -1,9 +1,10 @@
 import io
 from operator import indexOf
+from Services import Utils as logic_Utils
 import sys
 import streamlit as st
 import streamlit_shadcn_ui as ui
-from Services import db_Manager as db
+from Services import St_utils, db_Manager as db
 from streamlit_ace import st_ace
 import CustomDQNModel as model
 import ast
@@ -14,6 +15,10 @@ import pandas as pd
 from Models import dati, Iteration as iteration, Training_Model as trainingMod
 from Models import Mod_esecutor as model
 import numpy as np
+from Services.config import Config as conf
+from Models.dati import Dati
+from Services.DataRetriver import DataRetriver as dataret
+
 
 st.set_page_config(
     page_title="trainer",
@@ -27,40 +32,22 @@ st.set_page_config(
     }
 )
 
-#TODO: Semplicemente mal fatto 
-st.title('Train')
+#TODO: Menage Db configuration
+# HINT: tento l utilizzo di un config globale
+retriver = dataret()
+config = retriver.config
+
+st_utils.header('Training Area', st_utils.PageName.SETTINGS)
 tarining = db.retrive_all('training')
 traing_objs = []
 traing_objs_names = []
 
+#region intestazione
 if 'Selected_Iteration' not in st.session_state:
     st.switch_page('Ui_Exe.py')
-    
 
-# for i in tarining:
-#     tr_obj = trainingMod.Training_Model.convert_db_response(i)
-#     traing_objs.append(tr_obj)
-#     traing_objs_names.append(tr_obj.name)
-
-# st.divider()
-# col_1, col_2 = st.columns(2)
-# st.write(st.session_state.Selected_Iteration[0][9])
-# defoult = next((p for p in traing_objs if p.name == st.session_state.Selected_Iteration[0][9]),None)
-# idx = indexOf(traing_objs,defoult)
-
-# with col_1:
-#     st.subheader('Select A Different Training_Set_UP:')
-# with col_2:
-#     selet_Iter = st.selectbox('training selection', traing_objs_names, label_visibility='collapsed',index=idx)
-
-# record = db.retive_a_list_of_recordos('id','training',traing_objs[indexOf(traing_objs_names,selet_Iter)].id)
-# rec = record[0]
-
-# st.session_state['Selected_Iteration'] = tarining[idx]
-    
-st.write(st.session_state['Selected_Iteration'])
 iter = st.session_state['Selected_Iteration']
-function, process, model_, _train = st_utils.build_training_from_tr_record(iter)
+function, process, model_, _train = st_utils.build_training_from_tr_record(iter, config)
 
 ex = st.expander('Process_Details')
 with ex:
@@ -95,7 +82,7 @@ if res == 'untrained':
         if selected:
             datti_id = (untrained[names.index(selected)].dati_id)
             dats = db.retive_a_list_of_recordos('id', 'dati', datti_id)
-            dats = dati.Dati.convert_db_response(dats[0])
+            dats = dati.Dati.convert_db_response(dats[0],config)
             # st.write(dats.test_data_.head(5))
 
             c1, c2, c3 = st.columns(3)
@@ -115,39 +102,182 @@ if res == 'untrained':
                  #else:
                  #    st.session_state.Iter = iteration.Iterazione.convert_db_response(dats)
 
+#endregion
+
 if train_or_test == 'New_Train':
+    #HACK Deprecated Method
+    #TODO: Fix this process
+    # st_utils.Load_Data()
+    st.subheader('Build_your_Iteration :')
+    st.divider()
+    
+    if 'Data' not in st.session_state:
+        col1,col2 = st.columns(2,gap='small')
+        with col1:
+            st.write('Data Load Mode :')
+        with col2:
+            mode_selector = st.select_slider('slider', ['Use Data Reference', 'Load CSV'], label_visibility='collapsed')
+            # st.write(function.action_schema)
+            # st.write(type(function.action_schema))
 
-    st_utils.Load_Data()
-    st_utils.Try_Force_Corrispondenza(function)
+        if mode_selector == 'Load CSV':
 
-    if 'Data' in st.session_state and 'Env' not in st.session_state:
+        # uploaded_file = st.file_uploader("Load a CSV", type="csv", label_visibility='collapsed')
+
+        # # Verifica se un file e stato caricato
+        # if uploaded_file is not None:
+        #     # Leggi il CSV in un DataFrame Pandas
+        #     df = pd.read_csv(uploaded_file)
+
+        #     if 'Data' not in st.session_state:
+        #         st_utils.st_sessions_states('Data',df)
+                
+        #     data, removed = st_utils.remove_columns(df)
+            
+        #     if removed:
+        #         st_utils.st_sessions_states('Data',data)
+        #     st.write(st.session_state.Data.head(5))
+            
+        #     ex = st.expander('Proportion Your Data')
+            
+        #     with ex:
+
+        #         work_Data = -1
+        #         test_Data = -1
+
+        #         train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
+        #         if train_data != len(st.session_state.Data):
+        #             work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
+        #             if work_Data != len(st.session_state.Data):
+        #                 test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
         
-        st.subheader('Build_your_data_Iteration')
-        st.write(st.session_state.ichi_ref)
+        #     st.divider()
+        #     st.warning('Using Identical Names Tables will be overritten')
+        #     col1b, col2b = st.columns(2,gap='large')
+        #     with col1b:
+        #         dati_name = st.text_input('label',label_visibility='collapsed',placeholder='Dati Table Name')
+        #     with col2b:
+        #         if st.button('Save New Data Table'):
+        #             retriver.create_A_Dedicated_Table(dati_name, st.session_state.Data)
+        #             dato = Dati(retriver.PATH, st.session_state.Data,conf,train_data,work_Data,test_Data, name=dati_name)
+        #             dato.push_on_db()
+        #             st_utils.st_sessions_states('Dati',dato)
+                    
+        #  #TODO: Fix this method
+        # st_utils.Try_Force_Corrispondenza(function)
+        # ds1, ds2 = st.columns(2,gap='large')
+        
+        # with ds2:
+        #     iteration_name = st.text_input('Iteration_Name', value='Test_Iteration')
+        #     name = st.text_input('Data_Iteration_Name', value='Test_Data_Iteration')
+
+        # work_Data = -1
+        # test_Data = -1
+
+        # train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
+        # if train_data != len(st.session_state.Data):
+        #     work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
+        #     if work_Data != len(st.session_state.Data):
+        #         test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
+
+         # if click_btn:
+         #    d = dati.Dati(st.session_state.ichi_ref,st.session_state.Data, train_data,work_Data,test_Data, name=name)
+         #    d.pusch_on_db()
+         #    d_response= db.retrive_last('dati', '*')
+         #    dati_i = dati.Dati.convert_db_response(d_response)
+         #    dati_id = dati_i.id
+            
+         #    #HINT: non sto registrando i dati nella sezione
+         #    i = iteration.Iterazione(iteration_name,dati_id,_train.id)
+         #    i.push_on_db()
+         #    iter = db.retrive_last('iterazioni','*')
+
+
+         #    if 'Iter' not in st.session_state:
+         #        st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
+         #    else:
+         #        st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
     
-        iteration_name = st.text_input('Iteration_Name', value='Test_Iteration')
-        name = st.text_input('Data_Iteration_Name', value='Test_Data_Iteration')
+         #    if 'Env' not in st.session_state:
+         #        st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
+         #    else :
+         #        st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
 
-        work_Data = -1
-        test_Data = -1
+         #    st.experimental_rerun()
+            st.warning('Not Implemented Yet')
+                        
+                        
+        if mode_selector == 'Use Data Reference':
+            
+            col1,col2 = st.columns(2,gap='small')
 
-        train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
-        if train_data != len(st.session_state.Data):
-            work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
-            if work_Data != len(st.session_state.Data):
-                test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
+            tulpe = db.retrive_all('dati')
+            dati_objs = []
+            nomi = []
 
-        st.write(work_Data)
-    
-        if st.button('Build_Iteration'):
-            d = dati.Dati(st.session_state.ichi_ref,st.session_state.Data, train_data,work_Data,test_Data, name=name)
-            d.pusch_on_db()
-            d_response= db.retrive_last('dati', '*')
-            dati_i = dati.Dati.convert_db_response(d_response)
+            for i in tulpe:
+                var = Dati.convert_db_response(i,config)
+                if logic_Utils.compare_function_to_dati(function,var):
+                    dati_objs.append(var)
+                    nomi.append(var.name)
+
+            with col1:
+                st.write('')
+                st.write('')
+                st.write('')
+                st.write('Select Your Data Reference:')
+
+            with col2:
+                st.write('')
+                selection = st.selectbox('Names', nomi,label_visibility='collapsed')
+                procede = st.button('Proced')
+                ind = indexOf(nomi,selection)
+                
+            if procede:
+                data = retriver.fetch_data(selection)
+                st_utils.st_sessions_states('Data',data)
+                obj = dati_objs[ind]
+                st_utils.st_sessions_states('Dati',obj)
+                st_utils.st_sessions_states('ichi_ref',obj.name)
+                st.divider()
+                st.write(data.head(5))
+                
+            
+    if 'Data' in st.session_state and 'Env' not in st.session_state:
+        train_data = st.session_state.Dati.train_data
+        work_Data = st.session_state.Dati.work_data
+        test_Data = st.session_state.Dati.test_data
+        
+        ds1,_, ds2 = st.columns(3,gap='large')
+        
+        with ds1:
+            iteration_name = st.text_input('Iteration_Name', placeholder='Iteration_Name', label_visibility='collapsed')
+            data_selection = [f'Train Data : {train_data}',f'Work Data : {work_Data}', f'Test Data : {test_Data}']
+            data_set_selector = st.selectbox('Select yuor data Portion', data_selection)
+            
+            
+        with ds2:
+            st.write('')
+            st.write('')
+            st.write('')
+            st.write('')
+            click_btn = st.button('Build_Iteration')
+
+        if click_btn:
+            dati_i = st.session_state.Dati
             dati_id = dati_i.id
             
+            selected = None
+
+            if indexOf(data_selection,data_set_selector) == 0:
+                selected = dati_i.train_data_
+            elif indexOf(data_selection,data_set_selector) == 1:
+                selected = dati_i.work_data_
+            elif indexOf(data_selection,data_set_selector) == 2:
+                selected = dati_i.test_data_
+            
             #HINT: non sto registrando i dati nella sezione
-            i = iteration.Iterazione(iteration_name,dati_id,_train.id)
+            i = iteration.Iterazione(iteration_name,st.session_state.Dati.id,_train.id)
             i.push_on_db()
             iter = db.retrive_last('iterazioni','*')
 
@@ -158,9 +288,9 @@ if train_or_test == 'New_Train':
                 st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
     
             if 'Env' not in st.session_state:
-                st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
+                st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(selected, function, process)
             else :
-                st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
+                st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(selected, function, process)
 
             st.experimental_rerun()
 

@@ -5,7 +5,7 @@ from streamlit.type_util import OptionSequence
 from tensorflow.python.ops.ragged.ragged_tensor import session
 from Services import db_Manager as db
 from Models.Reward_Function import Rewar_Function as Rw
-from Services import St_utils as utils
+from Services import St_utils as utils, config as conf
 from Models.process import Process as pr
 from CustomDQNModel import CustomDQNModel as model, Layers as ly, layers_type as lt
 from Models.Training_Model import Training_Model as training, Training_statu as status
@@ -13,6 +13,9 @@ from Models.Training_Model import Training_Model as training, Training_statu as 
 utils.header('Compose your Training',utils.PageName.COMPOSE)
 
 function = st.expander('Select Your Function')
+
+#TODO: Gestione dei db config
+config = conf.Config()
 
 functions = db.retrive_all('functions')
 models = db.retrive_all('models')
@@ -56,7 +59,6 @@ with function:
             st.session_state.pop('FUNCTION')
             st.experimental_rerun()
             
- 
         
 if 'FUNCTION' in st.session_state:
     processes = db.retrive_all('processes')
@@ -67,7 +69,7 @@ if 'FUNCTION' in st.session_state:
         proc_name = []
         
         for i in processes:
-            pr_ob = pr.convert_db_response(i)
+            pr_ob = pr.convert_db_response(i,None)
             proc_objs.append(pr_ob)
             proc_name.append(pr_ob.name)
             
@@ -145,25 +147,29 @@ if 'MODEL' in st.session_state:
     st.subheader('Save New Iteration')
     
     co_1, co_2 = st.columns(2)
-    log_p = 'LOG_PATH_FITTIZZIA'
+    log_p = config.logs_path
 
     with co_2:
         TRAINING_NAME = st.text_input('Training name', label_visibility='collapsed')
-        custom_log_path = st.checkbox('custom_path', label_visibility='collapsed')
-        if custom_log_path:
-            log_p = st.text_input('Training path', label_visibility='collapsed')
+        #HINT: disabled custom log path
+        # custom_log_path = st.checkbox('custom_path', label_visibility='collapsed')
+        # if custom_log_path:
+        #     log_p = st.text_input('Training path', label_visibility='collapsed')
             
         save_training = st.button('Save Your Training')
         
     with co_1:
         st.write('Training Name:')
         st.write('Use Custom Log Path:')
-        if custom_log_path:
-            st.write('Log Path:')
+        # if custom_log_path:
+        #     st.write('Log Path:')
             
     if save_training:
         train = training(TRAINING_NAME ,status.PLANNED,st.session_state.FUNCTION.id,st.session_state.PROCESS.id, 
                                         st.session_state.MODEL.id, log_p)
         train.push_on_db('Pusch from Add Training')
-        st.success('Training Set Up Saved')
+        retrived = db.retrive_last('training','*')
+        retrived_obj = training.convert_db_response(retrived)
+        st.success('Training Set Up Saved Updated In Home')
+        utils.st_sessions_states('Training',retrived_obj)
 

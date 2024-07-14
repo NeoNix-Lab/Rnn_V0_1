@@ -34,7 +34,7 @@ class PageName(Enum):
     COMPOSE = 'Compose'
     SETTINGS = 'settings'
 
-def build_training_from_tr_record(record):
+def build_training_from_tr_record(record, config):
     # TODO: refactor per poter ricevere oggetti anziche records
     """
     Costruisce e ritorna gli oggetti Function, Process e Model da un record di training.
@@ -55,10 +55,10 @@ def build_training_from_tr_record(record):
         train = tr_mod.convert_db_response(record)
 
         process_ = db.retive_a_list_of_recordos('id', 'processes', train.process_id)
-        _process = pr.Process.convert_db_response(process_[0])
+        _process = pr.Process.convert_db_response(process_[0], config)
 
         function_ = db.retive_a_list_of_recordos('id', 'functions', train.function_id)
-        _function = rw.Rewar_Function.convert_db_response(function_[0])
+        _function = rw.Rewar_Function.convert_db_response(function_[0], config)
         _model = build_static_model_from_id(train.model_id, _process.window_size)
        
 
@@ -291,8 +291,8 @@ def Try_Force_Corrispondenza(Obj_Function):
          corrispondenza = colonne_df == chiavi_dict
          
          if corrispondenza == False:
-            st.warning('Il set di dati non e compatibile con la funzione')
-            if st.button('Tenta di forzare la corrispondenza'):
+            st.warning('The dataset is not compatible with the function')
+            if st.button('Try to force match'):
                 new_dataframe = []
                 for i in colonne_df:
                     if i in chiavi_dict:
@@ -305,6 +305,7 @@ def Try_Force_Corrispondenza(Obj_Function):
                     chiavi_dict = set(Obj_Function.data_schema.keys())
          
                     corrispondenza = colonne_df == chiavi_dict
+                    st.rerun()
 
     else:
         st.warning('You need to add data in order to sync it')
@@ -453,9 +454,12 @@ def ShowFunctionForm(function_obj: rw.Rewar_Function):
     status =pd.DataFrame.from_dict(function_obj.status_schema,orient='index')
 
     with cont:
-        st.header("Riepilogo Funzione")
-        st.write(f"ID: {function_obj.id}")
-        st.write(f"Name: {function_obj.name}")
+        st.subheader("Function Details :")
+        fc1, _, fc2 = st.columns(3, gap='small')
+        with fc2:
+            st.write(f"ID: {function_obj.id}")
+        with fc1:
+            st.write(f"Name: {function_obj.name}")
         st.write(f"Actions Schema:")
         st.dataframe(action,use_container_width=True)
         st.write(f"Data Schema:")
@@ -469,10 +473,12 @@ def st_sessions_states(statename, statevalue):
         st.session_state[statename] = statevalue
         
 def header(title, page_name:PageName):
-    st.title(f'{title}')
-    st.divider()
+    # st.divider()
     
     c1,c2,c3,c4,c5 = st.columns(5,gap='small')
+    with c1:
+        st.title(f'{title}')
+        
     with c3:
         if page_name != PageName.SETTINGS:
             if st.button('DB Settings'):
