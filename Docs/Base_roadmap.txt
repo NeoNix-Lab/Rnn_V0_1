@@ -1,0 +1,13 @@
+
+VERSIONE 0.1
+TODO: migliorare il filtraggio dei trading 1
+TODO: sviluppare l area trading 2
+TODO: miglirare i log di trading 3
+TODO: aggiungere un ui per il preprocess dei dati 4
+TODO: implementare la nuova navigazione LAST
+TODO: pulire i bug
+TODO: eliminare i dati sporchi
+
+
+
+

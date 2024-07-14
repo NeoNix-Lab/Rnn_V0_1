@@ -1,0 +1,8 @@
+{
+  "DATA_PATH": "C:\\Users\\user\\OneDrive\\Desktop\\DB\\Test_Cloud_Lite.db",
+  "MODLES_PATH": "C:\\Users\\user\\OneDrive\\Desktop\\DB\\RNN_Tuning_V01.db",
+  "LOGS_PATH": "C:\\Users\\user\\OneDrive\\Desktop\\DB_Models_Logs",
+  "DATA_PATH_COLAB": "",
+  "MODLES_PATH_COLAB": "",
+  "LOGS_PATH_COLAB": ""
+}
