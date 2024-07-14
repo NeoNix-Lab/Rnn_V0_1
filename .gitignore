@@ -1,5 +1,5 @@
 .vs/
 .streamlit/
-.Deprecatede/
+.Deprecated/
 .Docs/
-Test
+Test.py
