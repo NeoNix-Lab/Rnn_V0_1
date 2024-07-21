@@ -6,7 +6,7 @@ from tabnanny import verbose
 import numpy as np
 import tensorflow as tf
 import time
-from CustomDQNModel import CustomDQNModel as model
+from Models.Model_Static import CustomDQNModel as model
 from Models.Flex_Envoirment import EnvFlex as envoirment
 from Models.ReplayBuffer import ReplayBuffer
 from datetime import datetime , timedelta
@@ -181,8 +181,6 @@ class Trainer():
             return azione_one_hot
 
     def Train(self, n_episodi, mode, batch_size):
-       #TODO:Gestisco male la coda 
-       #TODO:Manca il batchSize
        self.ep_report.clear()
        
        if self.profile:
@@ -194,13 +192,8 @@ class Trainer():
            raise ValueError('Train mode : batch |  step | serie')
 
        if mode == 'serie':
-           #HACK: qui sto riducendo epsilon del numero di episodi, sei sicuro??
            #HACK: pongo la dimensione del batch == alla lunghezza della serie
            batch_size = len(self.env.data)-(self.env.window_size+1)
-           if n_episodi > 1:
-                self.epsilon_reduce = n_episodi-1
-           else:
-               self.epsilon_reduce = n_episodi
 
        for episodio in range(n_episodi):
            self.episoded_Path = f'{self.path_2}/episodio_{str(episodio)}'
@@ -212,7 +205,6 @@ class Trainer():
 
            self.episode = episodio
            #HACK: non sto mai pulendo la queque
-           # TODO: verificare se lo stato viene effettivamente sovrascritto
            stato = self.env.reset() # Reset
 
            # ottengo il tensore dello stato
@@ -233,11 +225,9 @@ class Trainer():
                # Aggiungo una dimensione al tensore
                tens = tf.expand_dims(stato[0], axis=0)
                # Selezione Azione
-               if mode == 'step':
-                    self.epsilon = self.reduce_epsilon()
+               self.epsilon = self.reduce_epsilon()
                azione = self.epsylon_greedy_policy(state=tens, model=self.main_network) 
 
-               # TODO: verificala!!!
                azione = np.argmax(azione)
 
                # Esecuzione Azione / Ossevazione
@@ -248,23 +238,20 @@ class Trainer():
                # Estraggo E Aggiungo Una dimensione al nuvo stato
                stato_t , ricompensa_t , terminato_t = self.estrapola_tensore(nuovo_stato, ricompensa, done)
                #TODO: verifica della struttura e del metodo di campionamento e selezione del campionamento
-               self.replayer.push(state=stato[0], action=azione, reward=ricompensa_t, next_state=stato_t, done=terminato_t )
+               if mode != 'step':
+                    self.replayer.push(state=stato[0], action=azione, reward=ricompensa_t, next_state=stato_t, done=terminato_t )
 
                # Memorizzazione
                if mode == 'step':
-                    coda = len(self.replayer.buffer) 
-
-                    if coda >= batch_size:
-                        batch = self.campionamento(batch_size)
-                        self.Aggiornamento_Main(*batch)
+                   batch = self.campionamento(1)
+                   self.Aggiornamento_Main(*batch)
 
                if mode != 'step':
-                   self.epsilon = self.reduce_epsilon()
                    coda = len(self.replayer.buffer) 
                    print(f'coda : {coda}')
                    print(f'batch_size : {batch_size}')
  
-                   if coda >= batch_size:
+                   if coda % batch_size:
                         batch = self.campionamento(batch_size)
                         self.Aggiornamento_Main(*batch)
                
@@ -313,7 +300,7 @@ class Trainer():
 
     # Campionamento del Batch
     def campionamento(self, batch_size):
-        stati, azioni, ricompense, stati_successivi, terminati = self.replayer.sample(batch_size)#zip(*batch)
+        stati, azioni, ricompense, stati_successivi, terminati = self.replayer.sample(batch_size)
         return stati, azioni, ricompense, stati_successivi, terminati
 
     # TODO: Richiede una normalizzazione nell estrazione dei dati

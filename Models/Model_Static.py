@@ -118,22 +118,18 @@ class CustomDQNModel(tf.keras.Model):
     def build_layers(self, notes='No Notes'):
         try:
             layer_counter = 0
-            # for layer in self.lay_obj:
-            #     if layer.type == layers_type.INPUT:
-            #         print(f'@@@@@@@@@@type{type(layer)}')
-            #         print(f'@@@@@@@@@@_____i{layer}')
-
-            #         var = layer.layer['params']['input_shape']
-            #         print(f'@@@@@@@{var}')
-            #         if isinstance(layer.layer['params']['input_shape'], tuple):
-            #             # Converti la tupla in una lista
-            #             input_shape_list = list(layer.layer['params']['input_shape'])
-            #             # Modifica l'elemento desiderato
-            #             input_shape_list[0] = self.window_size
-            #             # Riconverti la lista in una tupla, se necessario
-            #             layer.layer['params']['input_shape'] = tuple(input_shape_list)
-            #         elif isinstance(layer.layer['params']['input_shape'], list):
-            #             layer.layer['params']['input_shape'][0] = self.window_size
+            for layer in self.lay_obj:
+                if layer.type == layers_type.INPUT:
+                    var = layer.layer['params']['input_shape']
+                    if isinstance(layer.layer['params']['input_shape'], tuple):
+                        # Converti la tupla in una lista
+                        input_shape_list = list(layer.layer['params']['input_shape'])
+                        # Modifica l'elemento desiderato
+                        input_shape_list[0] = self.window_size
+                        # Riconverti la lista in una tupla, se necessario
+                        layer.layer['params']['input_shape'] = tuple(input_shape_list)
+                    elif isinstance(layer.layer['params']['input_shape'], list):
+                        layer.layer['params']['input_shape'][0] = self.window_size
         except ValueError as e :
             raise ValueError(f'Errore nella sovrascrittura della forma : {e}')
 

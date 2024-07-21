@@ -55,7 +55,6 @@ with t1:
     st.subheader('Selected Training Details :')
 with t2:
     hide = st.checkbox('hide')
-st.divider()
 
 if hide == False:
     ex = st.expander('Process_Details')
@@ -118,109 +117,99 @@ if res == 'untrained':
                  env, test_env = st_utils.build_and_test_envoirment(st.session_state.Data, function, process)
                  st_utils.st_sessions_states('Env',[env, test_env])
                  st.rerun()
-
+                 
+st.divider()
 #endregion
 
     #TODO: Fix this process
     # st_utils.Load_Data()
 
-if 'Data' not in st.session_state:
+if 'Dati' not in st.session_state:
     st.subheader('Grab_your_Data :')
-    st.divider()
 
     col1,col2 = st.columns(2,gap='small')
     with col1:
         st.write('Data Load Mode :')
     with col2:
         mode_selector = st.select_slider('slider', ['Use Data Reference', 'Load CSV'], label_visibility='collapsed')
-        # st.write(function.action_schema)
-        # st.write(type(function.action_schema))
     
     if mode_selector == 'Load CSV':
+        if 'Data' in st.session_state:
+            st.session_state.pop('Data')
+        uploaded_file = st.file_uploader("Load a CSV", type="csv", label_visibility='collapsed')
 
-        # uploaded_file = st.file_uploader("Load a CSV", type="csv", label_visibility='collapsed')
+        # Verifica se un file e stato caricato
+        if uploaded_file is not None:
+            # Leggi il CSV in un DataFrame Pandas
+            df = pd.read_csv(uploaded_file)
 
-        # # Verifica se un file e stato caricato
-        # if uploaded_file is not None:
-        #     # Leggi il CSV in un DataFrame Pandas
-        #     df = pd.read_csv(uploaded_file)
 
-        #     if 'Data' not in st.session_state:
-        #         st_utils.st_sessions_states('Data',df)
+            if 'Data' not in st.session_state:
+                st_utils.st_sessions_states('Data',df)
                 
-        #     data, removed = st_utils.remove_columns(df)
+            data, removed = st_utils.remove_columns(df)
             
-        #     if removed:
-        #         st_utils.st_sessions_states('Data',data)
-        #     st.write(st.session_state.Data.head(5))
+            if removed:
+                st_utils.st_sessions_states('Data',data)
+                
             
-        #     ex = st.expander('Proportion Your Data')
+            colonne_df = set(st.session_state.Data.columns)
+            chiavi_dict = set(function.data_schema.keys())
             
-        #     with ex:
+            dataespander = st.expander('Display Data Schema')
 
-        #         work_Data = -1
-        #         test_Data = -1
+            with dataespander:
+                dats1,dats2 = st.columns(2 , gap='Large')
+                with dats1:
+                    st.subheader('Data Schema :')
+                    st.write(list(colonne_df))
+                with dats2:
+                    st.subheader('Function Data Schema :')
+                    st.write(list(chiavi_dict))
+             
+            corrispondenza = colonne_df == chiavi_dict
+            
+            if removed:
+                st_utils.Try_Force_Corrispondenza(function)
+                colonne_df = set(st.session_state.Data.columns)
+                chiavi_dict = set(function.data_schema.keys())
+                 
+                corrispondenza:bool = colonne_df == chiavi_dict
+                
+            if corrispondenza:
+                sd1, sd2 = st.columns(2,gap='small')
 
-        #         train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
-        #         if train_data != len(st.session_state.Data):
-        #             work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
-        #             if work_Data != len(st.session_state.Data):
-        #                 test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
+                with sd2:
+                    ex1 = st.expander('Sow Your Data')
+                    with ex1:
+                        st.write(st.session_state.Data)
+                
+                with sd1:
+                    ex = st.expander('Proportion Your Data')
+                    with ex:
+                        work_Data = -1
+                        test_Data = -1
+
+                        train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
+                        if train_data != len(st.session_state.Data):
+                            work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
+                            if work_Data != len(st.session_state.Data):
+                                test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
         
-        #     st.divider()
-        #     st.warning('Using Identical Names Tables will be overritten')
-        #     col1b, col2b = st.columns(2,gap='large')
-        #     with col1b:
-        #         dati_name = st.text_input('label',label_visibility='collapsed',placeholder='Dati Table Name')
-        #     with col2b:
-        #         if st.button('Save New Data Table'):
-        #             retriver.create_A_Dedicated_Table(dati_name, st.session_state.Data)
-        #             dato = Dati(retriver.PATH, st.session_state.Data,conf,train_data,work_Data,test_Data, name=dati_name)
-        #             dato.push_on_db()
-        #             st_utils.st_sessions_states('Dati',dato)
-                    
-        #  #TODO: Fix this method
-        # st_utils.Try_Force_Corrispondenza(function)
-        # ds1, ds2 = st.columns(2,gap='large')
-        
-        # with ds2:
-        #     iteration_name = st.text_input('Iteration_Name', value='Test_Iteration')
-        #     name = st.text_input('Data_Iteration_Name', value='Test_Data_Iteration')
+                st.divider()
+                st.warning('Using Identical Names Tables will be overritten')
+            else:
+                st.error('Unmatching Data Schema')
 
-        # work_Data = -1
-        # test_Data = -1
-
-        # train_data = st.slider('Train_Data',0,len(st.session_state.Data),value=int(len(st.session_state.Data)/3), step=1)
-        # if train_data != len(st.session_state.Data):
-        #     work_Data = st.slider('Work_Data', train_data, len(st.session_state.Data) ,int(train_data+(len(st.session_state.Data)-train_data)/2), step=1)
-        #     if work_Data != len(st.session_state.Data):
-        #         test_Data = st.slider('Test_Data',work_Data,len(st.session_state.Data),int(work_Data+(len(st.session_state.Data)-work_Data)/2), step=1)
-
-         # if click_btn:
-         #    d = dati.Dati(st.session_state.ichi_ref,st.session_state.Data, train_data,work_Data,test_Data, name=name)
-         #    d.pusch_on_db()
-         #    d_response= db.retrive_last('dati', '*')
-         #    dati_i = dati.Dati.convert_db_response(d_response)
-         #    dati_id = dati_i.id
-            
-         #    #HINT: non sto registrando i dati nella sezione
-         #    i = iteration.Iterazione(iteration_name,dati_id,_train.id)
-         #    i.push_on_db()
-         #    iter = db.retrive_last('iterazioni','*')
-
-
-         #    if 'Iter' not in st.session_state:
-         #        st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
-         #    else:
-         #        st.session_state.Iter = iteration.Iterazione.convert_db_response(iter)
-    
-         #    if 'Env' not in st.session_state:
-         #        st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
-         #    else :
-         #        st.session_state.Env = env, test_env = st_utils.build_and_test_envoirment(dati_i.train_data_, function, process)
-
-         #    st.experimental_rerun()
-            st.warning('Not Implemented Yet')
+            col1b, col2b = st.columns(2,gap='large')
+            with col1b:
+                dati_name = st.text_input('label',label_visibility='collapsed',placeholder='Dati Table Name')
+            with col2b:
+                if st.button('Save New Data Table', type='secondary',disabled= not corrispondenza):
+                    retriver.create_A_Dedicated_Table(dati_name, st.session_state.Data)
+                    dato = Dati(retriver.PATH, st.session_state.Data,conf,train_data,work_Data,test_Data, name=dati_name)
+                    dato.push_on_db()
+                    st_utils.st_sessions_states('Dati',dato)
                     
     if mode_selector == 'Use Data Reference':
             
@@ -258,7 +247,7 @@ if 'Data' not in st.session_state:
                 st.write(data.head(5))
             
         
-if 'Data' in st.session_state and 'Env' not in st.session_state:
+if 'Data' in st.session_state and 'Dati' in st.session_state and 'Env' not in st.session_state:
     st.subheader('Build_your_Iteration :')
     st.divider()
 
@@ -352,9 +341,8 @@ if 'Env' in st.session_state and 'Iter' in st.session_state:
             GAMMA = process.gamma
             TAU = process.tau
             EPOCHE = process.epochs
-            BATCH_SIZE = int(process.window_size)
+            BATCH_SIZE = int(process.batch_size)
             #TODO: manca la replay capacity
-            #TODO: il batch_size e la dimensione della finestra
 
             _mod = model.Trainer(st.session_state.Env[0],  model_, EPSILON_START,EPSILON_END,EPSILON_REDUCE, GAMMA, TAU, _train.name, epoche=EPOCHE)
 

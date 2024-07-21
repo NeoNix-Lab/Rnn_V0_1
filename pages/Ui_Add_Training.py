@@ -10,6 +10,18 @@ from Models.process import Process as pr
 from CustomDQNModel import CustomDQNModel as model, Layers as ly, layers_type as lt
 from Models.Training_Model import Training_Model as training, Training_statu as status
 
+st.set_page_config(
+    page_title='Compose',
+    page_icon="random",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'Get Help': 'https://docs.streamlit.io/library/api-reference/layout',
+        'Report a bug': "https://https://shadcn.streamlit.app/DatePicker",
+        'About': "# Here you will able to build Customs RL Functions"
+    }
+    )
+
 utils.header('Compose your Training',utils.PageName.COMPOSE)
 
 function = st.expander('Select Your Function')

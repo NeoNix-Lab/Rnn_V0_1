@@ -137,4 +137,14 @@ def compare_function_to_dati(function_obj:rw, dati_obj:Dati):
     columns = [i for i in dati_obj.data.columns]
 
     return chiavi == columns
-    
+
+def text_column_metrics(df, column):
+    metrics = {}
+    metrics['Total Entries'] = len(df[column])
+    metrics['Unique Entries'] = df[column].nunique()
+    metrics['Most Frequent Entry'] = df[column].mode().values[0]
+    metrics['Average Length'] = df[column].astype(str).apply(len).mean()
+    metrics['Max Length'] = df[column].astype(str).apply(len).max()
+    metrics['Min Length'] = df[column].astype(str).apply(len).min()
+    return metrics
+ 

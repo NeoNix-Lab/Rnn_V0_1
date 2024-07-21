@@ -1,17 +1,21 @@
 from enum import Enum
-from typing import Callable
+import os
+import numpy as np
+import plotly.express as px
+import seaborn as sns
+from typing import Callable, Literal
 from streamlit.elements.image import UseColumnWith
 from Models.Training_Model import Training_Model as tr_mod, Training_statu
 from Services import db_Manager as db
 from Models import process as pr
 from Models.process import process_type as prt, ProcessLossFunction as prl, ProcessOptimizer as pro
-
+from Models.Iteration import Iterazione as Iter
 from Models import Reward_Function as rw
 from Models import Flex_Envoirment as flex
 from Models import Iteration as iter
 from Models.dati import Dati
-from CustomDQNModel import CustomDQNModel as model
-from CustomDQNModel import Layers as ly
+from Models.Model_Static import CustomDQNModel as model
+from Models.Model_Static import Layers as ly
 from Models.Mod_esecutor import Trainer
 import pandas as pd
 import matplotlib as mpl
@@ -20,8 +24,6 @@ from matplotlib import animation
 import streamlit as st
 from Services import DataRetriver as ichi
 from streamlit_ace import st_ace
-# from Services import St_utils as utils
-# from Services.config import Config
 
 
 class PageName(Enum):
@@ -135,7 +137,30 @@ def display_stats(_data_frame:pd.DataFrame, printed_colum:list(), xmax_add=100, 
     plt.legend()
 
     st.pyplot(fig)
-    
+
+def build_patther(type:Literal['resoult','actions'],path):
+    if type == 'resoult':
+        r1,r2 = st.columns(2,gap='small')
+
+        with r1:
+            st.subheader('Your Data Path:')
+        with r2:
+            last_path = os.path.join(path, 'resoult')
+            st.success(last_path)
+            
+        return st.file_uploader("Observation CSV file", type="csv",accept_multiple_files=False, label_visibility='collapsed')
+
+    if type == 'actions':
+        r1,r2 = st.columns(2,gap='small')
+
+        with r1:
+            st.subheader('Your Action Path:')
+        with r2:
+            last_path = os.path.join(path, 'actions')
+            st.success(last_path)
+            
+        return st.file_uploader("Action CSV file", type="csv",accept_multiple_files=False, label_visibility='collapsed')
+
 def display_Action_stats(_data_frame:pd.DataFrame, printed_colum:list(), xmax_add=100, facecolor='lightgreen', plot_color='lightblue'):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_xlim(0, len(_data_frame['step']) + xmax_add)
@@ -399,7 +424,6 @@ def show_dati_details(dati_obj:Dati, sidebar:bool=False):
             st.write(f"Test Set: {dati_obj.test_data}")
             st.write(f"Decrese: {dati_obj.decrease_data}")
             st.write(f"Db Reference: {dati_obj.db_references}")
-            
 
 def show_train_details(train):
     cont = st.container()
@@ -536,3 +560,83 @@ def show_process_form():
             process.push_on_db()
 
             return process
+
+def build_basic_resume_chart(df_base:pd.DataFrame, range_min_max:[]):
+    
+
+    df = df_base.iloc[range_min_max[0]:range_min_max[1]]
+    
+    # Assicurati che i valori di ricompensa siano validi (positivi e non nulli)
+    df['reword'] = df['reword'].apply(lambda x: x if x > 0 else np.nan).dropna()
+
+    actions = df['actionActions']
+    colors = sns.color_palette('hsv',len(df['actionActions'])).as_hex()
+
+    action_colors = {action : color for action, color in zip(actions,colors)}
+
+    df['color'] = df['actionActions'].map(action_colors)
+
+    # # Titolo dell applicazione
+    # st.title('Visualizzazione degli Stati con Ricompensa e Modalita di Selezione')
+    
+    # Crea il grafico a dispersione
+    fig, ax = plt.subplots()
+    
+    # Evidenzia lo sfondo quando la modalita di selezione corrisponde a random
+    for index, row in df.iterrows():
+        if row['selection'] == 'random':
+            ax.axvspan(index - 1, index +1, color='yellow', alpha=0.3)
+    
+    # Aggiungi i punti al grafico
+    scatter = ax.scatter(df.index, df['Price'], s=10, c=df['color'], alpha=0.6, edgecolors="w", linewidth=0.5)
+    
+    # Aggiungi etichette e titolo
+    ax.set_title('Trading Status')
+    ax.set_xlabel('Indice')
+    ax.set_ylabel('Stato')
+    
+    # Mostra il grafico con Streamlit
+    return fig
+
+def build_action_profit_chart(df_base:pd.DataFrame, range_min_max:[]):
+    df = df_base.iloc[range_min_max[0]:range_min_max[1]]
+    st.write(len(df))
+    
+    colors = df['reword'].apply(get_color_classification)
+    
+     # Crea il grafico a dispersione
+    fig, ax = plt.subplots()
+    
+    # Evidenzia lo sfondo quando la modalita di selezione corrisponde a random
+    for index, row in df.iterrows():
+        if row['selection'] == 'random':
+            ax.axvspan(index - 1, index +1, color='yellow', alpha=0.3)
+    
+    # Aggiungi i punti al grafico
+    scatter = ax.scatter(df.index, df['Price'], s=10, c=colors, alpha=0.6, edgecolors="w", linewidth=0.5)
+    
+    # Aggiungi etichette e titolo
+    ax.set_title('Rewords')
+    ax.set_xlabel('Indice')
+    ax.set_ylabel('Stato')
+    
+    return fig
+    
+def classify_value(value):
+   """Classifica il valore come positivo, neutro o negativo."""
+   if value > 0:
+       return 'positive'
+   elif value < 0:
+       return 'negative'
+   else:
+       return 'neutral'
+
+def get_color_classification(value):
+    """Restituisce un colore basato sulla classificazione del valore."""
+    classification = classify_value(value)
+    if classification == 'positive':
+        return 'green'
+    elif classification == 'negative':
+        return 'red'
+    else:
+        return 'grey'

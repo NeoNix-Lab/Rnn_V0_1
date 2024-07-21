@@ -14,7 +14,18 @@ import ast
 import json
 from Models.Training_Model import Training_Model as training, Training_statu as status
 
-      
+st.set_page_config(
+    page_title='Build',
+    page_icon="random",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'Get Help': 'https://docs.streamlit.io/library/api-reference/layout',
+        'Report a bug': "https://https://shadcn.streamlit.app/DatePicker",
+        'About': "# Here you will able to build Customs RL Functions"
+    }
+    )
+
 #region functions
 lstm1_dict = {
     "type": "LSTM",
