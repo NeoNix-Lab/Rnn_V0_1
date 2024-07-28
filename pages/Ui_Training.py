@@ -6,7 +6,7 @@ import streamlit as st
 import streamlit_shadcn_ui as ui
 from Services import St_utils, db_Manager as db
 from streamlit_ace import st_ace
-import CustomDQNModel as model
+from Models.Model_Static import CustomDQNModel as model
 import ast
 from Services import DataRetriver as ichi
 import json
