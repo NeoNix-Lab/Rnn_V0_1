@@ -388,6 +388,8 @@ def show_process_details(process:pr.Process):
         st.write(f"Dimensione Finestra: {process.window_size}")
         st.write(f"Fees: {process.fees}")
         st.write(f"Initial BBalance: {process.initial_balance}")
+        st.write(f"Batch Size: {process.batch_size}")
+
 
 def show_function_details(function:rw.Rewar_Function):
     code = function.funaction
@@ -544,6 +546,7 @@ def show_process_form():
         window_size = st.number_input("Window Size", value=20.0)
         fees = st.number_input("Fees", value=0.01)
         ini = st.number_input("Initial balance", value=100000)
+        batc_size = st.number_input("Batch_Size", value=100)
         
         submitted = st.form_submit_button("Submit New Process")
         
@@ -555,7 +558,7 @@ def show_process_form():
             process = pr.Process(name=name, notes=description, episodi=n_episode, epoche=epochs, 
                               epsilon_start=epsilon_start, epsilon_end=epsilon_end, epsilon_reduce=epsilon_reduce,
                               gamma=gamma, tau=tau, learning_rate=learning_rate, optimizer=_optimizer, 
-                              loss_functions=_loos, type_=_type, window_size=window_size, fees=fees, initial_balance=ini)
+                              loss_functions=_loos, type_=_type, window_size=window_size, fees=fees, initial_balance=ini,batch_size=batc_size)
             
             process.push_on_db()
 

@@ -7,7 +7,7 @@ from Services import db_Manager as db
 from Models.Reward_Function import Rewar_Function as Rw
 from Services import St_utils as utils, config as conf
 from Models.process import Process as pr
-from CustomDQNModel import CustomDQNModel as model, Layers as ly, layers_type as lt
+from Models.Model_Static import CustomDQNModel as model, Layers as ly, layers_type as lt
 from Models.Training_Model import Training_Model as training, Training_statu as status
 
 st.set_page_config(
@@ -81,6 +81,7 @@ if 'FUNCTION' in st.session_state:
         proc_name = []
         
         for i in processes:
+            st.write(i)
             pr_ob = pr.convert_db_response(i,None)
             proc_objs.append(pr_ob)
             proc_name.append(pr_ob.name)
