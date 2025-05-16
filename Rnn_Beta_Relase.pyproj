@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2106878f-0e2c-411f-8e0d-c00aef45343c}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>Test.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include=".vs\ProjectSettings.json" />
+    <Content Include=".vs\Rnn_Beta_Relase\ColorByRegexConfig.txt" />
+    <Content Include=".vs\Rnn_Beta_Relase\v17\DocumentLayout.json" />
+    <Content Include=".vs\VSWorkspaceState.json" />
+    <Content Include="conda_environment.yml" />
+    <Content Include="config.json" />
+    <Content Include="Docs\Base_roadmap.txt" />
+    <Content Include="Docs\DataAnalisisideas.md" />
+    <Content Include="Docs\Full_Process.md" />
+    <Content Include="Docs\incompatibilita_di_forma.md" />
+    <Content Include="Docs\Risorse_Esterne.txt" />
+    <Content Include="Docs\schemafit.md" />
+    <Content Include="Docs\Updating_schema.md" />
+    <Content Include="README.md" />
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Deprecated\1Ui_function.py" />
+    <Compile Include="Deprecated\1Ui_layers.py" />
+    <Compile Include="Deprecated\dati_deprecated.py" />
+    <Compile Include="Deprecated\DQL_v_0_2_deprecated.py" />
+    <Compile Include="Deprecated\model_esecutor.py" />
+    <Compile Include="Deprecated\test_st.py" />
+    <Compile Include="Deprecated\Ui_BuildItem.py" />
+    <Compile Include="Deprecated\Ui_Env.py" />
+    <Compile Include="Deprecated\Ui_Process.py" />
+    <Compile Include="Models\baseModelsClass.py" />
+    <Compile Include="Models\dati.py" />
+    <Compile Include="Models\Flex_Envoirment.py" />
+    <Compile Include="Models\Iteration.py" />
+    <Compile Include="Models\Model_Static.py" />
+    <Compile Include="Models\Mod_esecutor.py" />
+    <Compile Include="Models\process.py" />
+    <Compile Include="Models\ReplayBuffer.py" />
+    <Compile Include="Models\Reward_Function.py" />
+    <Compile Include="Models\Training_Model.py" />
+    <Compile Include="Models\__init__.py" />
+    <Compile Include="pages\Ui_Add_Training.py" />
+    <Compile Include="pages\Ui_Build_Items.py" />
+    <Compile Include="pages\Ui_QuantowerConn.py" />
+    <Compile Include="pages\Ui_Tests.py" />
+    <Compile Include="pages\Ui_Training.py" />
+    <Compile Include="pages\__init__.py" />
+    <Compile Include="Services\config.py" />
+    <Compile Include="Services\DataRetriver.py" />
+    <Compile Include="Services\db_Manager.py" />
+    <Compile Include="Services\St_utils.py" />
+    <Compile Include="Services\Utils.py" />
+    <Compile Include="Services\WebSoket.py" />
+    <Compile Include="Services\__init__.py" />
+    <Compile Include="Test.py" />
+    <Compile Include="Ui_Exe.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".vs" />
+    <Folder Include=".vs\Rnn_Beta_Relase" />
+    <Folder Include=".vs\Rnn_Beta_Relase\v17" />
+    <Folder Include="Deprecated" />
+    <Folder Include="Docs" />
+    <Folder Include="Models" />
+    <Folder Include="pages" />
+    <Folder Include="Services" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
